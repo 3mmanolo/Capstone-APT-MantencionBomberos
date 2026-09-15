@@ -113,7 +113,6 @@ class Mantencion(models.Model):
 
 
 class MantencionInsu(models.Model):
-    pk = models.CompositePrimaryKey("id_mant", "id_insu")
     id_mant = models.ForeignKey(
         Mantencion, on_delete=models.CASCADE, db_column="id_mant", related_name="insumos_usados",
     )
@@ -125,10 +124,15 @@ class MantencionInsu(models.Model):
 
     class Meta:
         db_table = "mantencion_insu"
+        # Esto crea la llave compuesta a nivel de Base de Datos
+        unique_together = (('id_mant', 'id_insu'),)
+
+    def __str__(self):
+        return f"Mantenimiento {self.id_mant_id} - Insumo {self.id_insu_id}"
+
 
 
 class MantencionEmp(models.Model):
-    pk = models.CompositePrimaryKey("id_mant", "id_emp")
     id_mant = models.ForeignKey(
         Mantencion, on_delete=models.CASCADE, db_column="id_mant", related_name="empleados_asignados",
     )
@@ -140,6 +144,11 @@ class MantencionEmp(models.Model):
 
     class Meta:
         db_table = "mantencion_emp"
+        # Esto crea la llave compuesta a nivel de Base de Datos
+        unique_together = (('id_mant', 'id_emp'),)
+
+    def __str__(self):
+        return f"Mantenimiento {self.id_mant_id} - Empleado {self.id_emp_id}"
 
 
 class Notificacion(models.Model):
