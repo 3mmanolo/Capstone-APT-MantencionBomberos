@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Historial del vehículo - Control de mantención</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<link rel="icon" type="image/png" href="/imagenes/logo.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo"><img src="/imagenes/logo2.png" alt="Logo Control de mantención"></div>
+      <div><p class="t1">Control de mantención</p><p class="t2">Bomberos Melipilla</p></div>
+    </div>
+    <a class="nav-item" href="dashboard.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg>Dashboard</a>
+    <a class="nav-item active" href="historial.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><polyline points="12 7.5 12 12 15.2 14.2"/></svg>Historial</a>
+    <a class="nav-item" href="registrar.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Registrar mantención</a>
+        <a class="nav-item nav-vehiculos" href="vehiculos.html" style="display:none;"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="11" height="8" rx="1"/><path d="M13 11h4l3 3v2h-3"/><circle cx="7" cy="18" r="1.6"/><circle cx="16.5" cy="18" r="1.6"/></svg>Vehículos</a>
+<a class="nav-item nav-usuarios" href="usuarios.html" style="display:none;"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"/><path d="M2.5 20c0-3.6 2.7-6 6-6s6 2.4 6 6"/><circle cx="17" cy="8.5" r="2.4"/><path d="M15.2 14.2c2.7 0.2 4.8 2.3 4.8 5.8"/></svg>Usuarios</a>
+    <div class="sidebar-footer">
+      <a class="nav-item" href="perfil.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-4.1 3.4-7.4 7.5-7.4s7.5 3.3 7.5 7.4"/></svg>Mi perfil</a>
+      <a class="sidebar-user" href="index.html" style="margin-top:6px; text-decoration:none;">
+        <div class="av">JP</div>
+        <div><p class="name">Juan Pérez Soto</p><p class="role">Cerrar sesión</p></div>
+      </a>
+    </div>
+  </div>
+
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></button>
+        <div><h2 id="topbar-title">Historial</h2><p class="crumb" id="topbar-crumb"></p></div>
+      </div>
+    </div>
+    <div class="content" id="content"></div>
+  </div>
+</div>
+
+<script>
+// ==== Datos compartidos del sistema ====
+
+const TODAY = new Date('2026-08-28');
+const DIAS_ALERTA = 7; // días antes del vencimiento para pasar a "por vencer"
+
+const CURRENT_USER = { name: 'Juan Pérez Soto', role: 'Encargado de flota', comp: 'Compañía 1ª', initials: 'JP', isAdmin: true };
+
+// Lista de usuarios del sistema (solo visible/editable por administradores)
+let USERS = [
+  { id: 'u1', name: 'Juan Pérez Soto', email: 'juan.perez@bomberosmelipilla.cl', comp: 'Compañía 1ª', role: 'Administrador', initials: 'JP' },
+  { id: 'u2', name: 'Camila Rojas Vega', email: 'camila.rojas@bomberosmelipilla.cl', comp: 'Compañía 2ª', role: 'Encargado de flota', initials: 'CR' },
+  { id: 'u3', name: 'Pedro Soto Álvarez', email: 'pedro.soto@bomberosmelipilla.cl', comp: 'Compañía 3ª', role: 'Voluntario', initials: 'PS' }
+];
+
+const V = {
+  'B-1': { name: 'B-1 · Bomba Melipilla', plate: 'HXPL-21', comp: 'Compañía 1ª', icon: 'ti-truck', nextMaint: '2026-08-22', tipo: 'Carro bomba', anio: '2016', km: '86.420 km' },
+  'B-2': { name: 'B-2 · Bomba Los Cerros', plate: 'FRWZ-88', comp: 'Compañía 2ª', icon: 'ti-truck', nextMaint: '2026-09-02', tipo: 'Carro bomba', anio: '2019', km: '54.100 km' },
+  'R-1': { name: 'R-1 · Rescate Vehicular', plate: 'KTLM-05', comp: 'Compañía 3ª', icon: 'ti-ambulance', nextMaint: '2026-09-01', tipo: 'Rescate', anio: '2021', km: '22.300 km' },
+  'B-3': { name: 'B-3 · Bomba Centro', plate: 'JNPX-47', comp: 'Compañía 4ª', icon: 'ti-truck', nextMaint: '2026-11-15', tipo: 'Carro bomba', anio: '2022', km: '11.800 km' },
+  'B-4': { name: 'B-4 · Bomba Forestal', plate: 'DGRT-63', comp: 'Compañía 1ª', icon: 'ti-truck', nextMaint: '2026-12-01', tipo: 'Forestal', anio: '2020', km: '38.900 km' }
+};
+
+const HISTORY = {
+  'B-1': [
+    { date: '14 jun 2026', title: 'Cambio de aceite y filtros', tipo: 'Preventiva', taller: 'Taller Automotriz Sur', detail: '$85.000 · 4L aceite 15W40, filtro de aceite', by: 'Juan Pérez Soto' },
+    { date: '2 mar 2026', title: 'Reparación sistema de frenos', tipo: 'Reactiva', taller: 'Taller Diesel Melipilla', detail: '$210.000 · pastillas y disco delantero', by: 'Camila Rojas Vega' },
+    { date: '18 nov 2025', title: 'Revisión general y neumáticos', tipo: 'Preventiva', taller: 'Taller Automotriz Sur', detail: '$340.000 · 2 neumáticos traseros', by: 'Juan Pérez Soto' },
+    { date: '5 ago 2025', title: 'Mantención bomba de agua', tipo: 'Preventiva', taller: 'Taller especializado Concepción', detail: '$120.000 · sellos y empaquetadura', by: 'Camila Rojas Vega' }
+  ],
+  'B-2': [
+    { date: '20 ago 2026', title: 'Diagnóstico de motor', tipo: 'Reactiva', taller: 'Taller Diesel Melipilla', detail: '$95.000 · revisión de inyectores', by: 'Camila Rojas Vega' },
+    { date: '10 feb 2026', title: 'Cambio de correa de distribución', tipo: 'Preventiva', taller: 'Taller Automotriz Sur', detail: '$180.000 · correa y tensores', by: 'Juan Pérez Soto' }
+  ],
+  'R-1': [
+    { date: '30 jul 2026', title: 'Revisión de sistema hidráulico', tipo: 'Preventiva', taller: 'Taller especializado Concepción', detail: '$110.000 · aceite hidráulico y filtros', by: 'Juan Pérez Soto' }
+  ],
+  'B-3': [
+    { date: '5 may 2026', title: 'Mantención de 10.000 km', tipo: 'Preventiva', taller: 'Taller Automotriz Sur', detail: '$70.000 · revisión general', by: 'Camila Rojas Vega' }
+  ],
+  'B-4': [
+    { date: '12 ene 2026', title: 'Revisión de sistema forestal', tipo: 'Preventiva', taller: 'Taller especializado Concepción', detail: '$130.000 · bomba y mangueras', by: 'Juan Pérez Soto' }
+  ]
+};
+
+function daysUntil(dateStr) {
+  return Math.round((new Date(dateStr) - TODAY) / (1000 * 60 * 60 * 24));
+}
+
+function getStatus(v) {
+  const days = daysUntil(v.nextMaint);
+  if (days < 0) {
+    return { status: 'danger', label: 'Mantención vencida', sub: `Venció hace ${Math.abs(days)} día${Math.abs(days) === 1 ? '' : 's'}` };
+  }
+  if (days <= DIAS_ALERTA) {
+    return { status: 'amber', label: days === 0 ? 'Vence hoy' : `Vence en ${days} día${days === 1 ? '' : 's'}`, sub: 'Programar mantención' };
+  }
+  return { status: 'green', label: 'Operativo', sub: `Próxima mantención en ${days} días` };
+}
+
+// Lee el parámetro ?id=B-1 de la URL actual
+function getVehicleIdFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('id') || 'B-1';
+}
+</script>
+<script>
+  if (CURRENT_USER.isAdmin) {
+    document.querySelectorAll(".nav-usuarios, .nav-vehiculos").forEach(el => el.style.display = "flex");
+  }
+</script>
+<script>
+  const id = getVehicleIdFromURL();
+  const v = V[id];
+  const items = HISTORY[id] || [];
+
+  if (!v) {
+    document.getElementById('content').innerHTML = `<p>Vehículo no encontrado. <a href="historial.html">Volver a la lista</a></p>`;
+  } else {
+    document.getElementById('topbar-title').textContent = 'Historial · ' + v.name;
+    document.getElementById('topbar-crumb').textContent = `Patente ${v.plate} · ${v.comp}`;
+
+    let body;
+    if (items.length === 0) {
+      body = `
+        <div class="card" style="text-align:center; padding:50px 20px; color:var(--text2);">
+          <i class="ti ti-file-off" style="font-size:28px;"></i>
+          <p style="font-size:13px; margin:10px 0 0;">Este vehículo aún no tiene mantenciones registradas.</p>
+        </div>`;
+    } else {
+      const rows = items.map(it => `
+        <tr>
+          <td style="color:var(--text2); white-space:nowrap;">${it.date}</td>
+          <td style="font-weight:600;">${it.title}</td>
+          <td><span class="pill" style="background:${it.tipo === 'Preventiva' ? 'var(--green-bg)' : 'var(--danger-bg)'}; color:${it.tipo === 'Preventiva' ? 'var(--green)' : 'var(--danger)'};">${it.tipo}</span></td>
+          <td style="color:var(--text2);">${it.taller}</td>
+          <td style="color:var(--text2);">${it.detail}</td>
+          <td style="color:var(--text2); white-space:nowrap;"><i class="ti ti-user" style="font-size:13px; margin-right:4px;"></i>${it.by}</td>
+        </tr>
+      `).join('');
+      body = `
+        <div class="card" style="padding:0; overflow:hidden;">
+          <table>
+            <thead><tr><th>Fecha</th><th>Trabajo</th><th>Tipo</th><th>Taller</th><th>Costo / detalle</th><th>Registrado por</th></tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>`;
+    }
+
+    document.getElementById('content').innerHTML = `
+      <a class="back-link" href="historial.html"><i class="ti ti-arrow-left"></i>Volver a la lista de vehículos</a>
+      ${body}
+    `;
+  }
+</script>
+
+<script>
+  (function(){
+    const menuToggle = document.getElementById("menu-toggle");
+    const sidebar = document.querySelector(".sidebar");
+    const backdrop = document.getElementById("sidebar-backdrop");
+    function closeMenu(){ sidebar.classList.remove("open"); backdrop.classList.remove("open"); }
+    if (menuToggle && sidebar && backdrop) {
+      menuToggle.addEventListener("click", () => {
+        sidebar.classList.toggle("open");
+        backdrop.classList.toggle("open");
+      });
+      backdrop.addEventListener("click", closeMenu);
+      sidebar.querySelectorAll("a").forEach(a => a.addEventListener("click", closeMenu));
+    }
+  })();
+</script>
+
+</body>
+</html>
