@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Vehículos - Control de mantención</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<link rel="icon" type="image/png" href="/imagenes/logo.png">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+
+<div class="layout">
+  <div class="sidebar">
+    <div class="sidebar-brand">
+      <div class="logo"><img src="/imagenes/logo2.png" alt="Logo Control de mantención"></div>
+      <div><p class="t1">Control de mantención</p><p class="t2">Bomberos Melipilla</p></div>
+    </div>
+    <a class="nav-item" href="dashboard.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg>Dashboard</a>
+    <a class="nav-item" href="historial.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><polyline points="12 7.5 12 12 15.2 14.2"/></svg>Historial</a>
+    <a class="nav-item" href="registrar.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Registrar mantención</a>
+    <a class="nav-item active nav-vehiculos" href="vehiculos.html" style="display:none;"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="11" height="8" rx="1"/><path d="M13 11h4l3 3v2h-3"/><circle cx="7" cy="18" r="1.6"/><circle cx="16.5" cy="18" r="1.6"/></svg>Vehículos</a>
+    <a class="nav-item nav-usuarios" href="usuarios.html" style="display:none;"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"/><path d="M2.5 20c0-3.6 2.7-6 6-6s6 2.4 6 6"/><circle cx="17" cy="8.5" r="2.4"/><path d="M15.2 14.2c2.7 0.2 4.8 2.3 4.8 5.8"/></svg>Usuarios</a>
+    <div class="sidebar-footer">
+      <a class="nav-item" href="perfil.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-4.1 3.4-7.4 7.5-7.4s7.5 3.3 7.5 7.4"/></svg>Mi perfil</a>
+      <a class="sidebar-user" href="index.html" style="margin-top:6px; text-decoration:none;">
+        <div class="av">JP</div>
+        <div><p class="name">Juan Pérez Soto</p><p class="role">Cerrar sesión</p></div>
+      </a>
+    </div>
+  </div>
+
+  <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
+  <div class="main">
+    <div class="topbar">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></button>
+        <div><h2>Vehículos</h2><p class="crumb">Administrar la flota del cuartel</p></div>
+      </div>
+      <button class="btn-primary" id="btn-nuevo-vehiculo">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+        Agregar vehículo
+      </button>
+    </div>
+
+    <div class="content">
+      <div class="card" id="form-card" style="display:none; margin-bottom:20px; max-width:680px; margin-left:auto; margin-right:auto;">
+        <p style="font-size:13px; font-weight:700; margin:0 0 14px;" id="form-title">Agregar vehículo</p>
+        <input type="hidden" id="edit-id">
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div><label>Código interno</label><input type="text" id="f-code" placeholder="Ej: B-5"></div>
+          <div><label>Nombre del vehículo</label><input type="text" id="f-name" placeholder="Ej: Bomba Nueva Estación"></div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div><label>Patente</label><input type="text" id="f-plate" placeholder="Ej: ABCD-12"></div>
+          <div>
+            <label>Compañía</label>
+            <select id="f-comp">
+              <option>Compañía 1ª</option>
+              <option>Compañía 2ª</option>
+              <option>Compañía 3ª</option>
+              <option>Compañía 4ª</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:16px;">
+          <div>
+            <label>Tipo</label>
+            <select id="f-tipo">
+              <option>Carro bomba</option>
+              <option>Rescate</option>
+              <option>Forestal</option>
+              <option>Aljibe</option>
+              <option>Otro</option>
+            </select>
+          </div>
+          <div><label>Año</label><input type="text" id="f-anio" placeholder="Ej: 2023"></div>
+          <div><label>Kilometraje</label><input type="text" id="f-km" placeholder="Ej: 0 km"></div>
+        </div>
+
+        <label>Próxima mantención programada</label>
+        <input type="date" id="f-next" style="margin-bottom:20px;">
+
+        <div style="display:flex; gap:10px;">
+          <button class="btn-secondary" type="button" id="btn-cancelar">Cancelar</button>
+          <button class="btn-primary" type="button" id="btn-guardar">Guardar vehículo</button>
+        </div>
+      </div>
+
+      <div class="card" style="padding:0; overflow:hidden;">
+        <table>
+          <thead><tr><th>Vehículo</th><th>Patente</th><th>Compañía</th><th>Tipo</th><th>Año</th><th>Estado</th><th></th></tr></thead>
+          <tbody id="vehicles-body"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ==== Datos compartidos del sistema ====
+
+const TODAY = new Date('2026-08-28');
+const DIAS_ALERTA = 7; // días antes del vencimiento para pasar a "por vencer"
+
+const CURRENT_USER = { name: 'Juan Pérez Soto', role: 'Encargado de flota', comp: 'Compañía 1ª', initials: 'JP', isAdmin: true };
+
+// Lista de usuarios del sistema (solo visible/editable por administradores)
+let USERS = [
+  { id: 'u1', name: 'Juan Pérez Soto', email: 'juan.perez@bomberosmelipilla.cl', comp: 'Compañía 1ª', role: 'Administrador', initials: 'JP' },
+  { id: 'u2', name: 'Camila Rojas Vega', email: 'camila.rojas@bomberosmelipilla.cl', comp: 'Compañía 2ª', role: 'Encargado de flota', initials: 'CR' },
+  { id: 'u3', name: 'Pedro Soto Álvarez', email: 'pedro.soto@bomberosmelipilla.cl', comp: 'Compañía 3ª', role: 'Voluntario', initials: 'PS' }
+];
+
+// V es "let" en esta página porque aquí se agregan/eliminan vehículos
+let V = {
+  'B-1': { name: 'B-1 · Bomba Melipilla', plate: 'HXPL-21', comp: 'Compañía 1ª', icon: 'ti-truck', nextMaint: '2026-08-22', tipo: 'Carro bomba', anio: '2016', km: '86.420 km' },
+  'B-2': { name: 'B-2 · Bomba Los Cerros', plate: 'FRWZ-88', comp: 'Compañía 2ª', icon: 'ti-truck', nextMaint: '2026-09-02', tipo: 'Carro bomba', anio: '2019', km: '54.100 km' },
+  'R-1': { name: 'R-1 · Rescate Vehicular', plate: 'KTLM-05', comp: 'Compañía 3ª', icon: 'ti-ambulance', nextMaint: '2026-09-01', tipo: 'Rescate', anio: '2021', km: '22.300 km' },
+  'B-3': { name: 'B-3 · Bomba Centro', plate: 'JNPX-47', comp: 'Compañía 4ª', icon: 'ti-truck', nextMaint: '2026-11-15', tipo: 'Carro bomba', anio: '2022', km: '11.800 km' },
+  'B-4': { name: 'B-4 · Bomba Forestal', plate: 'DGRT-63', comp: 'Compañía 1ª', icon: 'ti-truck', nextMaint: '2026-12-01', tipo: 'Forestal', anio: '2020', km: '38.900 km' }
+};
+
+const HISTORY = {
+  'B-1': [
+    { date: '14 jun 2026', title: 'Cambio de aceite y filtros', tipo: 'Preventiva', taller: 'Taller Automotriz Sur', detail: '$85.000 · 4L aceite 15W40, filtro de aceite', by: 'Juan Pérez Soto' },
+    { date: '2 mar 2026', title: 'Reparación sistema de frenos', tipo: 'Reactiva', taller: 'Taller Diesel Melipilla', detail: '$210.000 · pastillas y disco delantero', by: 'Camila Rojas Vega' },
+    { date: '18 nov 2025', title: 'Revisión general y neumáticos', tipo: 'Preventiva', taller: 'Taller Automotriz Sur', detail: '$340.000 · 2 neumáticos traseros', by: 'Juan Pérez Soto' },
+    { date: '5 ago 2025', title: 'Mantención bomba de agua', tipo: 'Preventiva', taller: 'Taller especializado Concepción', detail: '$120.000 · sellos y empaquetadura', by: 'Camila Rojas Vega' }
+  ],
+  'B-2': [
+    { date: '20 ago 2026', title: 'Diagnóstico de motor', tipo: 'Reactiva', taller: 'Taller Diesel Melipilla', detail: '$95.000 · revisión de inyectores', by: 'Camila Rojas Vega' },
+    { date: '10 feb 2026', title: 'Cambio de correa de distribución', tipo: 'Preventiva', taller: 'Taller Automotriz Sur', detail: '$180.000 · correa y tensores', by: 'Juan Pérez Soto' }
+  ],
+  'R-1': [
+    { date: '30 jul 2026', title: 'Revisión de sistema hidráulico', tipo: 'Preventiva', taller: 'Taller especializado Concepción', detail: '$110.000 · aceite hidráulico y filtros', by: 'Juan Pérez Soto' }
+  ],
+  'B-3': [
+    { date: '5 may 2026', title: 'Mantención de 10.000 km', tipo: 'Preventiva', taller: 'Taller Automotriz Sur', detail: '$70.000 · revisión general', by: 'Camila Rojas Vega' }
+  ],
+  'B-4': [
+    { date: '12 ene 2026', title: 'Revisión de sistema forestal', tipo: 'Preventiva', taller: 'Taller especializado Concepción', detail: '$130.000 · bomba y mangueras', by: 'Juan Pérez Soto' }
+  ]
+};
+
+function daysUntil(dateStr) {
+  return Math.round((new Date(dateStr) - TODAY) / (1000 * 60 * 60 * 24));
+}
+
+function getStatus(v) {
+  const days = daysUntil(v.nextMaint);
+  if (days < 0) {
+    return { status: 'danger', label: 'Mantención vencida', sub: `Venció hace ${Math.abs(days)} día${Math.abs(days) === 1 ? '' : 's'}` };
+  }
+  if (days <= DIAS_ALERTA) {
+    return { status: 'amber', label: days === 0 ? 'Vence hoy' : `Vence en ${days} día${days === 1 ? '' : 's'}`, sub: 'Programar mantención' };
+  }
+  return { status: 'green', label: 'Operativo', sub: `Próxima mantención en ${days} días` };
+}
+
+// Lee el parámetro ?id=B-1 de la URL actual
+function getVehicleIdFromURL() {
+  const params = new URLSearchParams(window.location.search);
+  return params.get('id') || 'B-1';
+}
+</script>
+
+<script>
+  // Solo los administradores pueden ver esta página
+  if (!CURRENT_USER.isAdmin) {
+    window.location.href = 'dashboard.html';
+  }
+  document.querySelectorAll('.nav-usuarios, .nav-vehiculos').forEach(el => el.style.display = 'flex');
+
+  const tbody = document.getElementById('vehicles-body');
+  const formCard = document.getElementById('form-card');
+  const formTitle = document.getElementById('form-title');
+
+  function render() {
+    tbody.innerHTML = Object.entries(V).map(([code, v]) => {
+      const s = getStatus(v);
+      return `
+      <tr>
+        <td style="font-weight:600;">${v.name}</td>
+        <td style="color:var(--text2);">${v.plate}</td>
+        <td style="color:var(--text2);">${v.comp}</td>
+        <td style="color:var(--text2);">${v.tipo}</td>
+        <td style="color:var(--text2);">${v.anio}</td>
+        <td><span class="pill pill-${s.status}">${s.label}</span></td>
+        <td style="text-align:right; white-space:nowrap;">
+          <svg onclick="editVehicle('${code}')" style="cursor:pointer; margin-right:14px; vertical-align:middle;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4.5-1 10-10a2 2 0 0 0-3-3l-10 10-1 4.5z"/><path d="M13 6l3 3"/></svg>
+          <svg onclick="deleteVehicle('${code}')" style="cursor:pointer; vertical-align:middle;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M7 7l1 12a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-12"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>
+        </td>
+      </tr>`;
+    }).join('');
+  }
+
+  function openForm(code) {
+    formCard.style.display = 'block';
+    if (code) {
+      const v = V[code];
+      formTitle.textContent = 'Editar vehículo';
+      document.getElementById('edit-id').value = code;
+      document.getElementById('f-code').value = code;
+      document.getElementById('f-code').disabled = true;
+      document.getElementById('f-name').value = v.name.includes('·') ? v.name.split('·')[1].trim() : v.name;
+      document.getElementById('f-plate').value = v.plate;
+      document.getElementById('f-comp').value = v.comp;
+      document.getElementById('f-tipo').value = v.tipo;
+      document.getElementById('f-anio').value = v.anio;
+      document.getElementById('f-km').value = v.km;
+      document.getElementById('f-next').value = v.nextMaint;
+    } else {
+      formTitle.textContent = 'Agregar vehículo';
+      document.getElementById('edit-id').value = '';
+      document.getElementById('f-code').value = '';
+      document.getElementById('f-code').disabled = false;
+      document.getElementById('f-name').value = '';
+      document.getElementById('f-plate').value = '';
+      document.getElementById('f-comp').selectedIndex = 0;
+      document.getElementById('f-tipo').selectedIndex = 0;
+      document.getElementById('f-anio').value = '';
+      document.getElementById('f-km').value = '';
+      document.getElementById('f-next').value = '';
+    }
+    formCard.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  window.editVehicle = function(code) {
+    openForm(code);
+  };
+
+  window.deleteVehicle = function(code) {
+    const v = V[code];
+    if (!v) return;
+    if (confirm(`¿Eliminar el vehículo ${v.name} de la flota?`)) {
+      delete V[code];
+      delete HISTORY[code];
+      render();
+    }
+  };
+
+  document.getElementById('btn-nuevo-vehiculo').addEventListener('click', () => openForm(null));
+  document.getElementById('btn-cancelar').addEventListener('click', () => formCard.style.display = 'none');
+
+  document.getElementById('btn-guardar').addEventListener('click', () => {
+    const editId = document.getElementById('edit-id').value;
+    const code = editId || document.getElementById('f-code').value.trim();
+    const nombre = document.getElementById('f-name').value.trim();
+    const plate = document.getElementById('f-plate').value.trim();
+    const comp = document.getElementById('f-comp').value;
+    const tipo = document.getElementById('f-tipo').value;
+    const anio = document.getElementById('f-anio').value.trim();
+    const km = document.getElementById('f-km').value.trim() || '0 km';
+    const next = document.getElementById('f-next').value;
+
+    if (!code || !nombre || !plate || !next) {
+      alert('Por favor completa al menos el código, nombre, patente y próxima mantención.');
+      return;
+    }
+    if (!editId && V[code]) {
+      alert('Ya existe un vehículo con ese código interno. Usa uno distinto.');
+      return;
+    }
+
+    const icon = tipo === 'Rescate' ? 'ti-ambulance' : 'ti-truck';
+    V[code] = { name: `${code} · ${nombre}`, plate, comp, icon, nextMaint: next, tipo, anio, km };
+
+    formCard.style.display = 'none';
+    render();
+  });
+
+  render();
+</script>
+
+<script>
+  (function(){
+    const menuToggle = document.getElementById("menu-toggle");
+    const sidebar = document.querySelector(".sidebar");
+    const backdrop = document.getElementById("sidebar-backdrop");
+    function closeMenu(){ sidebar.classList.remove("open"); backdrop.classList.remove("open"); }
+    if (menuToggle && sidebar && backdrop) {
+      menuToggle.addEventListener("click", () => {
+        sidebar.classList.toggle("open");
+        backdrop.classList.toggle("open");
+      });
+      backdrop.addEventListener("click", closeMenu);
+      sidebar.querySelectorAll("a").forEach(a => a.addEventListener("click", closeMenu));
+    }
+  })();
+</script>
+
+</body>
+</html>

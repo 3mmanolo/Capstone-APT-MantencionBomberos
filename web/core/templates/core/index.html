@@ -1,0 +1,66 @@
+{% load static %}
+
+
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Iniciar sesión - Control de mantención</title>
+<link rel="icon" type="image/png" href="{% static 'imagenes/logo.png' %}">
+<link rel="stylesheet" href="{% static 'styles.css' %}">
+</head>
+<body>
+
+<div id="login-view">
+  <div class="login-split">
+
+    <div class="login-panel">
+      <div class="login-panel-inner">
+
+        <div class="login-logo-row">
+          <img src="{% static 'core/imagenes/logo2.png' %}" alt="Logo Control de Mantención" class="login-logo-sm">
+          <span class="login-brand-name">Control de mantención</span>
+        </div>
+
+        <h1>Bienvenido<br>de nuevo</h1>
+        <p class="sub">Inicia sesión para gestionar la flota del Cuerpo de Bomberos de Melipilla</p>
+
+       <form method="POST" action="{% url 'index' %}">
+    {% csrf_token %}
+    
+    <label>Usuario o correo institucional</label>
+    <input type="text" name="username" placeholder="nombre.apellido@bomberosmelipilla.cl" required>
+
+    <label>Contraseña</label>
+    <input type="password" name="password" placeholder="••••••••" required>
+
+    {% if error %}
+        <p style="color: #ff4d4d; font-size: 0.85rem; margin-top: 5px;">{{ error }}</p>
+    {% endif %}
+
+    <button type="submit" class="btn-primary" style="width:100%;">
+        Iniciar sesión
+    </button>
+</form>
+
+        <div class="login-links">
+          <span class="fp">¿Olvidaste tu contraseña?</span>
+          <span class="co">Compañía 1ª · 2ª · 3ª · 4ª</span>
+        </div>
+
+      </div>
+    </div>
+
+    <div class="login-visual">
+      <div class="login-visual-content">
+        <p class="login-visual-eyebrow">Cuerpo de Bomberos</p>
+        <h2>Melipilla</h2>
+        <p>Sistema de control de mantención de vehículos de emergencia</p>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+</body>
+</html>
