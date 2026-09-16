@@ -19,16 +19,22 @@
     </div>
     <a class="nav-item active" href="dashboard.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg>Dashboard</a>
     <a class="nav-item" href="historial.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><polyline points="12 7.5 12 12 15.2 14.2"/></svg>Historial</a>
-    <a class="nav-item" href="registrar.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Registrar mantención</a>
-        <a class="nav-item nav-vehiculos" href="vehiculos.html" style="display:none;"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="11" height="8" rx="1"/><path d="M13 11h4l3 3v2h-3"/><circle cx="7" cy="18" r="1.6"/><circle cx="16.5" cy="18" r="1.6"/></svg>Vehículos</a>
+<!-- En tu HTML estático -->
+<a class="btn-primary" href="{% url 'registrar' %}">
+    Registrar mantención
+</a>        <a class="nav-item nav-vehiculos" href="vehiculos.html" style="display:none;"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="11" height="8" rx="1"/><path d="M13 11h4l3 3v2h-3"/><circle cx="7" cy="18" r="1.6"/><circle cx="16.5" cy="18" r="1.6"/></svg>Vehículos</a>
 <a class="nav-item nav-usuarios" href="usuarios.html" style="display:none;"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"/><path d="M2.5 20c0-3.6 2.7-6 6-6s6 2.4 6 6"/><circle cx="17" cy="8.5" r="2.4"/><path d="M15.2 14.2c2.7 0.2 4.8 2.3 4.8 5.8"/></svg>Usuarios</a>
     <div class="sidebar-footer">
-      <a class="nav-item" href="perfil.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-4.1 3.4-7.4 7.5-7.4s7.5 3.3 7.5 7.4"/></svg>Mi perfil</a>
-      <a class="sidebar-user" href="index.html" style="margin-top:6px; text-decoration:none;">
-        <div class="av">JP</div>
-        <div><p class="name">Juan Pérez Soto</p><p class="role">Cerrar sesión</p></div>
-      </a>
-    </div>
+          <a class="nav-item" href="{% url 'perfil' %}"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-4.1 3.4-7.4 7.5-7.4s7.5 3.3 7.5 7.4"/></svg>Mi perfil</a>
+
+    <a class="sidebar-user" href="{% url 'index' %}" style="margin-top:6px; text-decoration:none;">
+        <div class="av">{{ current_user.initials }}</div>
+        <div>
+            <p class="name">{{ current_user.name }}</p>
+            <p class="role">Cerrar sesión</p>
+        </div>
+    </a>
+</div>
   </div>
 
   <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
@@ -42,8 +48,10 @@
         <i class="ti ti-bell" style="font-size:18px; color:var(--text2); cursor:pointer;"></i>
         <div style="width:1px; height:24px; background:var(--border);"></div>
         <div style="display:flex; align-items:center; gap:8px;">
-          <div style="width:30px; height:30px; border-radius:50%; background:var(--red); display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:700;">JP</div>
-          <span style="font-size:13px; font-weight:600;">Juan Pérez Soto</span>
+         <div style="width:30px; height:30px; border-radius:50%; background:var(--red); display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:700;">
+    {{ current_user.initials }}
+</div>
+<span style="font-size:13px; font-weight:600;">{{ current_user.name }}</span>
         </div>
       </div>
     </div>
@@ -53,6 +61,7 @@
     </div>
   </div>
 </div>
+{{ current_user|json_script:"user-data" }}
 
 <script>
 // ==== Datos compartidos del sistema ====
@@ -60,7 +69,7 @@
 const TODAY = new Date('2026-08-28');
 const DIAS_ALERTA = 7; // días antes del vencimiento para pasar a "por vencer"
 
-const CURRENT_USER = { name: 'Juan Pérez Soto', role: 'Encargado de flota', comp: 'Compañía 1ª', initials: 'JP', isAdmin: true };
+const CURRENT_USER = JSON.parse(document.getElementById('user-data').textContent);
 
 // Lista de usuarios del sistema (solo visible/editable por administradores)
 let USERS = [
@@ -144,15 +153,27 @@ function getVehicleIdFromURL() {
   }).join('');
 
   document.getElementById('content').innerHTML = `
-    <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px;">
-      <div class="stat"><p class="lbl">Vehículos totales</p><p class="val">${all.length}</p></div>
-      <div class="stat"><p class="lbl">Operativos</p><p class="val" style="color:#0F6E56;">${g}</p></div>
-      <div class="stat"><p class="lbl">Por vencer</p><p class="val" style="color:#854F0B;">${a}</p></div>
-      <div class="stat"><p class="lbl">Alertas vencidas</p><p class="val" style="color:#A32D2D;">${r}</p></div>
+<div style="display:grid; grid-template-columns:repeat(4,1fr); gap:14px; margin-bottom:24px;">
+    <div class="stat">
+        <p class="lbl">Vehículos Totales</p>
+        <p class="val">{{ total_vehiculos }}</p>
     </div>
+    <div class="stat">
+        <p class="lbl">Operativos</p>
+        <p class="val" style="color:#0F6E56;">{{ vehiculos_operativos }}</p>
+    </div>
+    <div class="stat">
+        <p class="lbl">Por vencer</p>
+        <p class="val" style="color:#854F0B;">{{ vehiculos_por_vencer }}</p>
+    </div>
+    <div class="stat">
+        <p class="lbl">Alertas vencidas</p>
+        <p class="val" style="color:#A32D2D;">{{ vehiculos_vencidos }}</p>
+    </div>
+</div>
     <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:14px;">
       <h3 style="font-size:15px; margin:0;">Flota de vehículos</h3>
-      <a class="btn-primary" href="registrar.html"><i class="ti ti-plus"></i>Registrar mantención</a>
+      <a class="btn-primary" href="{% url 'registrar' %}"><i class="ti ti-plus"></i>Registrar mantención</a>
     </div>
     <div class="card" style="padding:0; overflow:hidden;">
       <table>

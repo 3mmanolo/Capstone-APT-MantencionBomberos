@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.contrib.auth.models import User  # Importamos el User de Django
 
 class Compania(models.Model):
     id_comp = models.AutoField(primary_key=True)
@@ -17,6 +17,8 @@ class Compania(models.Model):
 
 class Usuario(models.Model):
     id_user = models.AutoField(primary_key=True)
+    # Vinculación con el User nativo de Django
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name="perfil", null=True, blank=True)
     nombre = models.CharField(max_length=120)
     rol = models.CharField(max_length=50)
     id_compania = models.ForeignKey(
