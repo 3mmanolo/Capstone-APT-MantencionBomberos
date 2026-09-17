@@ -1,8 +1,15 @@
 # core/views.py
-from django.shortcuts import render, redirect
+from django.shortcuts import render, redirect, get_object_or_404
+from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from .models import Vehiculo  # Importa tu modelo Vehiculo
+from .models import Vehiculo, Usuario, Compania # Importa tu modelo Vehiculo
+import json
+from django.utils.safestring import mark_safe
+
+
+
+
 def index(request):
     error = None
     if request.method == 'POST':
@@ -93,5 +100,63 @@ def vehiculos(request):
 def historial(request):
     return render(request, 'core/historial.html', )
 
+from django.shortcuts import render, redirect
+from django.contrib.auth.decorators import login_required
+from .models import Usuario
+
+# core/views.py
+
+# core/views.py
+
+@login_required(login_url='index')
 def usuarios(request):
-    return render(request, 'core/usuarios.html', )
+    if request.method == 'POST':
+        action = request.POST.get('action')
+        
+        if action == 'delete':
+            user_id = request.POST.get('user_id')
+            if user_id:
+                # Se elimina por la clave primaria sin importar la convención del ID
+                Usuario.objects.filter(pk=user_id).delete()
+            return redirect('usuarios')
+
+        elif action == 'save':
+            user_id = request.POST.get('edit_id')
+            nombre = request.POST.get('nombre')
+            rol = request.POST.get('rol')
+            compania_id = request.POST.get('compania')
+
+            if user_id:
+                u = get_object_or_404(Usuario, pk=user_id)
+                u.nombre = nombre
+                u.rol = rol
+                if compania_id:
+                    u.id_compania_id = compania_id
+                u.save()
+
+            return redirect('usuarios')
+
+    users_data = []
+    for u in Usuario.objects.select_related('id_compania', 'user').all():
+        users_data.append({
+            'id': u.id_user,
+            'name': u.nombre,
+            'email': u.user.email if u.user else 'Sin correo',
+            'comp': u.id_compania.nombre if u.id_compania else 'Sin compañía',
+            'role': u.rol,
+            'initials': ''.join([w[0].upper() for w in u.nombre.split()[:2]]) if u.nombre else 'US'
+        })
+
+    is_admin = False
+    if hasattr(request.user, 'perfil') and request.user.perfil:
+        is_admin = request.user.is_superuser or (request.user.perfil.rol and request.user.perfil.rol.lower() == 'administrador')
+    else:
+        is_admin = request.user.is_superuser
+
+    context = {
+        'users_json': users_data,
+        'current_user_json': {'isAdmin': is_admin},
+        'companias': Compania.objects.all(),
+    }
+    
+    return render(request, 'core/usuarios.html', context)

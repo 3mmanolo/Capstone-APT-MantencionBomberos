@@ -194,3 +194,37 @@
     .sidebar.open{ transform:translateX(0); }
     .content{ padding:18px; }
   }
+
+
+
+
+
+.badge-role {
+  padding: 4px 12px;
+  border-radius: 20px;
+  font-size: 12px;
+  font-weight: 600;
+  display: inline-block;
+  text-transform: capitalize;
+}
+
+/* Colores originales */
+.badge-admin {
+  background-color: #fde8e8;
+  color: #9b1c1c;
+}
+
+.badge-encargado {
+  background-color: #fef3c7;
+  color: #92400e;
+}
+
+.badge-voluntario {
+  background-color: #def7ec;
+  color: #03543f;
+}
+
+.content {
+  padding: 32px;
+  flex: 1;
+}
