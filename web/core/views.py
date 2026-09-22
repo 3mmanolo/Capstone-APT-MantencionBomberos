@@ -1,9 +1,10 @@
 # core/views.py
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
+from django.db.models import Count
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
-from .models import Vehiculo, Usuario, Compania # Importa tu modelo Vehiculo
+from .models import Vehiculo, Usuario, Compania, Mantencion, TipoMantencion 
 import json
 from django.utils.safestring import mark_safe
 
@@ -63,6 +64,10 @@ def dashboard(request):
 
 @login_required(login_url='index')
 def registrar(request):
+    vehiculos = Vehiculo.objects.all()
+    vehiculo_id_preseleccionado = request.GET.get('id')
+    tipos_mantencion = TipoMantencion.objects.all()
+
     perfil_usuario = request.user.perfil
 
     current_user_data = {
@@ -73,7 +78,14 @@ def registrar(request):
         'email': request.user.email,
     }
 
-    return render(request, 'core/registrar.html', {'current_user': current_user_data})
+    context = {
+        'vehiculos': vehiculos,
+        'vehiculo_id_preseleccionado': vehiculo_id_preseleccionado,
+        'current_user': current_user_data,
+        'tipos_mantencion': tipos_mantencion
+    }
+
+    return render(request, 'core/registrar.html', context)
 
 
 
@@ -97,8 +109,28 @@ def perfil(request):
 def vehiculos(request):
     return render(request, 'core/vehiculos.html', )
 
+@login_required(login_url='index')
 def historial(request):
-    return render(request, 'core/historial.html', )
+    # Cambiamos 'mantencion' por 'mantenciones'
+    vehiculos = Vehiculo.objects.select_related('id_compania').annotate(
+        num_registros=Count('mantenciones')
+    ).all()
+
+    context = {
+        'vehiculos': vehiculos,
+    }
+    return render(request, 'core/historial.html', context)
+
+@login_required(login_url='index')
+def detalle(request, vehiculo_id):
+    vehiculo = get_object_or_404(Vehiculo, pk=vehiculo_id)
+    mantenciones = Mantencion.objects.filter(id_vehi=vehiculo)
+    
+    context = {
+        'vehiculo': vehiculo,
+        'mantenciones': mantenciones,
+    }
+    return render(request, 'core/historial-detalle.html', context)
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required

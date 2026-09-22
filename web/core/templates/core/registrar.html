@@ -17,16 +17,18 @@
       <div class="logo"><img src="/imagenes/logo2.png" alt="Logo Control de mantención"></div>
       <div><p class="t1">Control de mantención</p><p class="t2">Bomberos Melipilla</p></div>
     </div>
-    <a class="nav-item" href="dashboard.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg>Dashboard</a>
-    <a class="nav-item" href="historial.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><polyline points="12 7.5 12 12 15.2 14.2"/></svg>Historial</a>
-    <a class="nav-item active" href="registrar.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Registrar mantención</a>
-        <a class="nav-item nav-vehiculos" href="vehiculos.html" style="display:none;"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="11" height="8" rx="1"/><path d="M13 11h4l3 3v2h-3"/><circle cx="7" cy="18" r="1.6"/><circle cx="16.5" cy="18" r="1.6"/></svg>Vehículos</a>
-<a class="nav-item nav-usuarios" href="usuarios.html" style="display:none;"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"/><path d="M2.5 20c0-3.6 2.7-6 6-6s6 2.4 6 6"/><circle cx="17" cy="8.5" r="2.4"/><path d="M15.2 14.2c2.7 0.2 4.8 2.3 4.8 5.8"/></svg>Usuarios</a>
+    <a class="nav-item" href="{% url 'dashboard' %}"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg>Dashboard</a>
+    <a class="nav-item" href="{% url 'historial' %}"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><polyline points="12 7.5 12 12 15.2 14.2"/></svg>Historial</a>
+    <a class="nav-item" href="{%  url 'registrar'  %}"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Registrar mantención</a>
+        <a class="nav-item nav-vehiculos" href="{% url 'vehiculos' %}" style="display:none;"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="11" height="8" rx="1"/><path d="M13 11h4l3 3v2h-3"/><circle cx="7" cy="18" r="1.6"/><circle cx="16.5" cy="18" r="1.6"/></svg>Vehículos</a>
+<a class="nav-item nav-usuarios" href="{% url 'usuarios' %}" style="display:none;"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"/><path d="M2.5 20c0-3.6 2.7-6 6-6s6 2.4 6 6"/><circle cx="17" cy="8.5" r="2.4"/><path d="M15.2 14.2c2.7 0.2 4.8 2.3 4.8 5.8"/></svg>Usuarios</a>
     <div class="sidebar-footer">
-      <a class="nav-item" href="perfil.html"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-4.1 3.4-7.4 7.5-7.4s7.5 3.3 7.5 7.4"/></svg>Mi perfil</a>
-      <a class="sidebar-user" href="index.html" style="margin-top:6px; text-decoration:none;">
-        <div class="av">{{ current_user.initials }}</div>
-        <div><p class="name">Juan Pérez Soto</p><p class="role">Cerrar sesión</p></div>
+                <a class="nav-item" href="{% url 'perfil' %}"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-4.1 3.4-7.4 7.5-7.4s7.5 3.3 7.5 7.4"/></svg>Mi perfil</a>
+    <a class="sidebar-user" href="{% url 'index' %}" style="margin-top:6px; text-decoration:none;">
+
+        <div class="av"> {{ current_user.initials }}
+</div>
+        <div><p class="name">{{ current_user.name }}</p><p class="role">Cerrar sesión</p></div>
       </a>
     </div>
   </div>
@@ -41,9 +43,14 @@
     </div>
     <div class="content">
       <form class="card" style="max-width:640px; margin:0 auto;" onsubmit="event.preventDefault(); alert('Mantención registrada (simulado). En la versión real esto se guardaría en la base de datos.'); window.location.href='dashboard.html';">
-        <label>Vehículo</label>
-        <select id="vehicle-select" style="margin-bottom:16px;"></select>
-
+<label for="vehicle-select">Vehículo</label>
+<select id="vehicle-select" name="vehiculo" style="margin-bottom:16px;">
+  {% for v in vehiculos %}
+    <option value="{{ v.id }}" {% if vehiculo_id_preseleccionado|add:"0" == v.id or request.GET.id == v.codigo_denominacion %}selected{% endif %}>
+      {{ v.modelo }} · {{ v.id_compania }} — {{ v.patente }}
+    </option>
+  {% endfor %}
+</select>
         <label>Registrado por</label>
         <div style="display:flex; align-items:center; gap:10px; background:var(--surface1); border:1px solid var(--border); border-radius:8px; padding:9px 12px; margin-bottom:16px;" id="user-block"></div>
 
@@ -152,12 +159,12 @@ function getVehicleIdFromURL() {
   }
 </script>
 <script>
-  const preselected = getVehicleIdFromURL();
+  //const preselected = getVehicleIdFromURL();
 
-  const select = document.getElementById('vehicle-select');
-  select.innerHTML = Object.entries(V).map(([id, v]) =>
-    `<option value="${id}" ${id === preselected ? 'selected' : ''}>${v.name} — ${v.plate}</option>`
-  ).join('');
+  //const select = document.getElementById('vehicle-select');
+  //select.innerHTML = Object.entries(V).map(([id, v]) =>
+   // `<option value="${id}" ${id === preselected ? 'selected' : ''}>${v.name} — ${v.plate}</option>`
+  //).join('');
 
   document.getElementById('user-block').innerHTML = `
     <div style="width:28px; height:28px; border-radius:50%; background:var(--red); display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:700;">{{ current_user.initials }}</div>
