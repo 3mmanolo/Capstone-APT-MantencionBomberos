@@ -25,6 +25,7 @@ class Usuario(models.Model):
         Compania, on_delete=models.SET_NULL, null=True, blank=True,
         db_column="id_compania", related_name="usuarios",
     )
+    telefono = models.CharField(max_length=30, blank=True, default='')
 
     class Meta:
         db_table = "usuario"
@@ -63,20 +64,6 @@ class Insumo(models.Model):
         return self.nombre
 
 
-class Empleados(models.Model):
-    id_emp = models.AutoField(primary_key=True)
-    nombre = models.CharField(max_length=120)
-    especialidad = models.CharField(max_length=100, blank=True)
-    tarifa_hora = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-
-    class Meta:
-        db_table = "empleados"
-        verbose_name_plural = "Empleados"
-
-    def __str__(self):
-        return self.nombre
-
-
 class Vehiculo(models.Model):
     id_vehi = models.AutoField(primary_key=True)
     patente = models.CharField(max_length=10, unique=True, null=True, blank=True)
@@ -88,6 +75,7 @@ class Vehiculo(models.Model):
     )
     estado = models.CharField(max_length=30, default="operativo")
     kilometraje = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    proxima_mantencion = models.DateField(null=True, blank=True)
 
     class Meta:
         db_table = "vehiculo"
@@ -104,6 +92,7 @@ class Mantencion(models.Model):
     id_tipo = models.ForeignKey(
         TipoMantencion, on_delete=models.PROTECT, db_column="id_tipo", related_name="mantenciones",
     )
+    descripcion = models.TextField(blank=True, default='')
     fecha_in = models.DateField(auto_now_add=True)
     fecha_ter = models.DateField(null=True, blank=True)
     estado = models.CharField(max_length=30, default="pendiente")
@@ -133,34 +122,3 @@ class MantencionInsu(models.Model):
         return f"Mantenimiento {self.id_mant_id} - Insumo {self.id_insu_id}"
 
 
-
-class MantencionEmp(models.Model):
-    id_mant = models.ForeignKey(
-        Mantencion, on_delete=models.CASCADE, db_column="id_mant", related_name="empleados_asignados",
-    )
-    id_emp = models.ForeignKey(
-        Empleados, on_delete=models.PROTECT, db_column="id_emp", related_name="mantenciones",
-    )
-    horas_tra = models.DecimalField(max_digits=6, decimal_places=2, default=0)
-    costo_aso = models.DecimalField(max_digits=12, decimal_places=2, default=0)
-
-    class Meta:
-        db_table = "mantencion_emp"
-        # Esto crea la llave compuesta a nivel de Base de Datos
-        unique_together = (('id_mant', 'id_emp'),)
-
-    def __str__(self):
-        return f"Mantenimiento {self.id_mant_id} - Empleado {self.id_emp_id}"
-
-
-class Notificacion(models.Model):
-    id_noti = models.AutoField(primary_key=True)
-    id_mant = models.ForeignKey(
-        Mantencion, on_delete=models.CASCADE, db_column="id_mant", related_name="notificaciones",
-    )
-    tipo_n = models.CharField(max_length=50, blank=True)
-    fecha_en = models.DateField(auto_now_add=True)
-    desti = models.CharField(max_length=150, blank=True)
-
-    class Meta:
-        db_table = "notificacion"

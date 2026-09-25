@@ -5,9 +5,9 @@ from django.contrib.auth.models import User
 from .models import Usuario
 # Importamos explícitamente todos tus modelos desde el archivo models.py de la carpeta actual
 from .models import (
-    Compania, Usuario, TipoMantencion, Insumo, 
-    Empleados, Vehiculo, Mantencion, 
-    MantencionInsu, MantencionEmp, Notificacion
+    Compania, Usuario, TipoMantencion, Insumo,
+    Vehiculo, Mantencion,
+    MantencionInsu,
 )
 
 # Definimos el perfil de Usuario como un bloque integrado
@@ -29,9 +29,6 @@ admin.site.register(Compania)
 admin.site.register(Usuario)
 admin.site.register(TipoMantencion)
 admin.site.register(Insumo)
-admin.site.register(Empleados)
 admin.site.register(Vehiculo)
 admin.site.register(Mantencion)
 admin.site.register(MantencionInsu)
-admin.site.register(MantencionEmp)
-admin.site.register(Notificacion)

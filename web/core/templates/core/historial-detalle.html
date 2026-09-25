@@ -15,7 +15,7 @@
   <div class="sidebar">
     <div class="sidebar-brand">
       <div class="logo"><img src="/imagenes/logo2.png" alt="Logo Control de mantención"></div>
-      <div><p class="t1">Control de mantención</p><p class="t2">Bomberos Melipilla</p></div>
+      <div><p class="t1">Control de mantención</p><p class="t2">Bomberos Talcahuano</p></div>
     </div>
     
     <!-- Rutas Django -->
@@ -40,7 +40,7 @@
       <div style="display:flex; align-items:center; gap:12px;">
         <button class="menu-toggle" id="menu-toggle" aria-label="Abrir menú"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg></button>
         <div>
-          <h2 id="topbar-title">Historial · {{ vehiculo.modelo }} · {{ vehiculo.tipo_o_nombre }}</h2>
+          <h2 id="topbar-title">Historial · {{ vehiculo.modelo }} · {{ vehiculo.tipo_v }}</h2>
           <p class="crumb" id="topbar-crumb">Patente {{ vehiculo.patente }} · {{ vehiculo.id_compania.nombre|default:"Sin compañía" }}</p>
         </div>
       </div>

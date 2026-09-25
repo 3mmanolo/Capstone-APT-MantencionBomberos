@@ -18,18 +18,18 @@
       <div class="login-panel-inner">
 
         <div class="login-logo-row">
-          <img src="{% static 'core/imagenes/logo2.png' %}" alt="Logo Control de Mantención" class="login-logo-sm">
+          <img src="{% static 'imagenes/logo2.png' %}" alt="Logo Control de Mantención" class="login-logo-sm">
           <span class="login-brand-name">Control de mantención</span>
         </div>
 
         <h1>Bienvenido<br>de nuevo</h1>
-        <p class="sub">Inicia sesión para gestionar la flota del Cuerpo de Bomberos de Melipilla</p>
+        <p class="sub">Inicia sesión para gestionar la flota del Cuerpo de Bomberos de Talcahuano</p>
 
        <form method="POST" action="{% url 'index' %}">
     {% csrf_token %}
     
     <label>Usuario o correo institucional</label>
-    <input type="text" name="username" placeholder="nombre.apellido@bomberosmelipilla.cl" required>
+    <input type="text" name="username" placeholder="nombre.apellido@bomberostalcahuano.cl" required>
 
     <label>Contraseña</label>
     <input type="password" name="password" placeholder="••••••••" required>
@@ -54,7 +54,7 @@
     <div class="login-visual">
       <div class="login-visual-content">
         <p class="login-visual-eyebrow">Cuerpo de Bomberos</p>
-        <h2>Melipilla</h2>
+        <h2>Talcahuano</h2>
         <p>Sistema de control de mantención de vehículos de emergencia</p>
       </div>
     </div>
