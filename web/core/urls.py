@@ -16,7 +16,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
-from core import views
+from core import views, api_views
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -30,7 +30,15 @@ urlpatterns = [
     path('usuarios/', views.usuarios, name='usuarios'),
     path('detalle/<int:vehiculo_id>/', views.detalle, name='detalle'),
 
-
-
-
+    # Endpoints API REST para la aplicación móvil Android
+    path('api/login/', api_views.api_login, name='api_login'),
+    path('api/dashboard/', api_views.api_dashboard, name='api_dashboard'),
+    path('api/vehiculos/', api_views.api_vehiculos, name='api_vehiculos'),
+    path('api/vehiculos/<int:vehiculo_id>/eliminar/', api_views.api_vehiculo_eliminar, name='api_vehiculo_eliminar'),
+    path('api/registrar-mantencion/', api_views.api_registrar_mantencion, name='api_registrar_mantencion'),
+    path('api/historial/', api_views.api_historial, name='api_historial'),
+    path('api/historial/<int:vehiculo_id>/', api_views.api_historial_detalle, name='api_historial_detalle'),
+    path('api/notificaciones/', api_views.api_notificaciones, name='api_notificaciones'),
+    path('api/usuarios/', api_views.api_usuarios, name='api_usuarios'),
+    path('api/perfil/', api_views.api_perfil, name='api_perfil'),
 ]
