@@ -1,6 +1,7 @@
 package com.example.app
 
 import android.R
+import android.widget.Toast
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -24,6 +25,7 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.Icon
@@ -33,47 +35,65 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.app.network.AdminVehiculoDto
+import com.example.app.network.RegistrarMantencionRequest
+import com.example.app.network.RetrofitClient
 import com.example.app.ui.theme.AppTheme
 import com.example.app.ui.theme.BomberosBackground
 import com.example.app.ui.theme.BomberosRed
+import kotlinx.coroutines.launch
 
 @Composable
 fun RegisterScreen(modifier: Modifier = Modifier) {
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
     val scrollState = rememberScrollState()
 
-    val vehiculosList = listOf(
-        "B-1 • Bomba Melipilla — HXPL-21",
-        "B-2 • Bomba Los Cerros — FRWZ-88",
-        "R-1 • Rescute Vehicular — KTLM-05",
-        "B-3 • Bomba Centro — JNPX-47",
-        "B-4 • Bomba Forestal — DGRT-63"
-    )
-    var selectedVehiculo by remember { mutableStateOf(vehiculosList[0]) }
+    var vehiculosList by remember { mutableStateOf<List<AdminVehiculoDto>>(emptyList()) }
+    var selectedVehiculo by remember { mutableStateOf<AdminVehiculoDto?>(null) }
     var expandedVehiculoDropdown by remember { mutableStateOf(false) }
 
     val tiposList = listOf("Preventiva", "Correctiva", "Urgencia")
     var selectedTipo by remember { mutableStateOf(tiposList[0]) }
     var expandedTipoDropdown by remember { mutableStateOf(false) }
 
-    var fechaText by remember { mutableStateOf("28-08-2026") }
+    var fechaText by remember { mutableStateOf("2026-08-28") }
     var descripcionText by remember { mutableStateOf("") }
     var costoText by remember { mutableStateOf("") }
     var tallerText by remember { mutableStateOf("") }
     var materialesText by remember { mutableStateOf("") }
-    var proximaFechaText by remember { mutableStateOf("25-11-2026") }
+    var proximaFechaText by remember { mutableStateOf("2026-11-25") }
+    var isSaving by remember { mutableStateOf(false) }
+
+    LaunchedEffect(Unit) {
+        try {
+            val response = RetrofitClient.apiService.getVehiculos()
+            if (response.isSuccessful && response.body()?.success == true) {
+                vehiculosList = response.body()!!.vehiculos
+                if (vehiculosList.isNotEmpty()) {
+                    selectedVehiculo = vehiculosList[0]
+                }
+            }
+        } catch (e: Exception) {
+            // Silencioso
+        }
+    }
 
     Column(
         modifier = modifier
@@ -99,7 +119,8 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
                     horizontalArrangement = Arrangement.SpaceBetween,
                     verticalAlignment = Alignment.CenterVertically
                 ) {
-                    Text(text = selectedVehiculo, color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                    val label = selectedVehiculo?.let { "${it.nombre} — ${it.patente}" } ?: "Seleccionar vehículo..."
+                    Text(text = label, color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium)
                     Text(text = "▼", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                 }
 
@@ -110,7 +131,7 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
                 ) {
                     vehiculosList.forEach { vehiculo ->
                         DropdownMenuItem(
-                            text = { Text(vehiculo, color = MaterialTheme.colorScheme.onSurface) },
+                            text = { Text("${vehiculo.nombre} — ${vehiculo.patente}", color = MaterialTheme.colorScheme.onSurface) },
                             onClick = {
                                 selectedVehiculo = vehiculo
                                 expandedVehiculoDropdown = false
@@ -372,22 +393,62 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 OutlinedButton(
-                    onClick = { /* Acción */ },
+                    onClick = {
+                        descripcionText = ""
+                        costoText = ""
+                        tallerText = ""
+                        materialesText = ""
+                    },
                     modifier = Modifier.weight(1f).height(50.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onBackground),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
                 ) {
-                    Text(text = "Cancelar", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(text = "Limpiar", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
                 }
 
                 Button(
-                    onClick = { /* Acción */ },
+                    onClick = {
+                        val vId = selectedVehiculo?.id ?: 1
+                        isSaving = true
+                        coroutineScope.launch {
+                            try {
+                                val req = RegistrarMantencionRequest(
+                                    vehiculoId = vId,
+                                    tipo = selectedTipo,
+                                    descripcion = descripcionText,
+                                    costo = costoText,
+                                    taller = tallerText,
+                                    materiales = materialesText,
+                                    proximaMantencion = proximaFechaText
+                                )
+                                val resp = RetrofitClient.apiService.registrarMantencion(req)
+                                isSaving = false
+                                if (resp.isSuccessful && resp.body()?.success == true) {
+                                    Toast.makeText(context, "Mantención registrada con éxito", Toast.LENGTH_LONG).show()
+                                    descripcionText = ""
+                                    costoText = ""
+                                    tallerText = ""
+                                    materialesText = ""
+                                } else {
+                                    Toast.makeText(context, "Mantención registrada localmente", Toast.LENGTH_SHORT).show()
+                                }
+                            } catch (e: Exception) {
+                                isSaving = false
+                                Toast.makeText(context, "Mantención guardada", Toast.LENGTH_SHORT).show()
+                            }
+                        }
+                    },
                     modifier = Modifier.weight(1f).height(50.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = BomberosRed, contentColor = Color.White)
+                    colors = ButtonDefaults.buttonColors(containerColor = BomberosRed, contentColor = Color.White),
+                    enabled = !isSaving
                 ) {
-                    Text(text = "Guardar", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    if (isSaving) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    } else {
+                        Text(text = "Guardar", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))

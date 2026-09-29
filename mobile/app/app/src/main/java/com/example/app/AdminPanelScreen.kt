@@ -17,7 +17,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.app.network.RetrofitClient
 import com.example.app.ui.theme.*
+import kotlinx.coroutines.launch
 
 @Composable
 fun AdminVehiclesScreen(
@@ -25,13 +27,43 @@ fun AdminVehiclesScreen(
     onAddVehicle: () -> Unit,
     onEditVehicle: (AdminVehicle) -> Unit
 ) {
-    val vehicles = listOf(
-        AdminVehicle("B-1 • Bomba Melipilla", "HXPL-21", "Compañía 1ª", "Carro bomba", "2016", "Mantención vencida", StatusRed),
-        AdminVehicle("B-2 • Bomba Los Cerros", "FRWZ-88", "Compañía 2ª", "Carro bomba", "2019", "Vence en 5 días", StatusOrange),
-        AdminVehicle("R-1 • Rescate Vehicular", "KTLM-05", "Compañía 3ª", "Rescate", "2021", "Vence en 4 días", StatusOrange),
-        AdminVehicle("B-3 • Bomba Centro", "JNPX-47", "Compañía 4ª", "Carro bomba", "2022", "Operativo", StatusGreen),
-        AdminVehicle("B-4 • Bomba Forestal", "DGRT-63", "Compañía 1ª", "Forestal", "2020", "Operativo", StatusGreen)
-    )
+    var vehicles by remember { mutableStateOf<List<AdminVehicle>>(emptyList()) }
+    val coroutineScope = rememberCoroutineScope()
+
+    val fetchVehicles: () -> Unit = {
+        coroutineScope.launch {
+            try {
+                val response = RetrofitClient.apiService.getVehiculos()
+                if (response.isSuccessful && response.body()?.success == true) {
+                    vehicles = response.body()!!.vehiculos.map { dto ->
+                        val color = if (dto.statusBadge == "green") StatusGreen else if (dto.statusBadge == "amber") StatusOrange else StatusRed
+                        AdminVehicle(
+                            name = dto.nombre,
+                            realId = dto.id,
+                            patente = dto.patente,
+                            compania = dto.compania,
+                            tipo = dto.tipo,
+                            anio = dto.anio,
+                            estado = dto.estado,
+                            color = color
+                        )
+                    }
+                }
+            } catch (e: Exception) {
+                vehicles = listOf(
+                    AdminVehicle("B-1 • Bomba Melipilla", 1, "HXPL-21", "Compañía 1ª", "Carro bomba", "2016", "Mantención vencida", StatusRed),
+                    AdminVehicle("B-2 • Bomba Los Cerros", 2, "FRWZ-88", "Compañía 2ª", "Carro bomba", "2019", "Vence en 5 días", StatusOrange),
+                    AdminVehicle("R-1 • Rescate Vehicular", 3, "KTLM-05", "Compañía 3ª", "Rescate", "2021", "Vence en 4 días", StatusOrange),
+                    AdminVehicle("B-3 • Bomba Centro", 4, "JNPX-47", "Compañía 4ª", "Carro bomba", "2022", "Operativo", StatusGreen),
+                    AdminVehicle("B-4 • Bomba Forestal", 5, "DGRT-63", "Compañía 1ª", "Forestal", "2020", "Operativo", StatusGreen)
+                )
+            }
+        }
+    }
+
+    LaunchedEffect(Unit) {
+        fetchVehicles()
+    }
 
     Column(
         modifier = Modifier
@@ -103,7 +135,16 @@ fun AdminVehiclesScreen(
                     badgeColor = vehicle.color,
                     initials = vehicle.name.take(1),
                     onEdit = { onEditVehicle(vehicle) },
-                    onDelete = { /* Borrar */ }
+                    onDelete = {
+                        coroutineScope.launch {
+                            try {
+                                RetrofitClient.apiService.eliminarVehiculo(vehicle.realId)
+                                fetchVehicles()
+                            } catch (e: Exception) {
+                                // Silencioso
+                            }
+                        }
+                    }
                 )
             }
         }
@@ -112,11 +153,32 @@ fun AdminVehiclesScreen(
 
 @Composable
 fun AdminUsersScreen(onBack: () -> Unit, onAddUser: () -> Unit, onEditUser: (AdminUser) -> Unit) {
-    val users = listOf(
-        AdminUser("JP", "Juan Pérez Soto", "juan.perez@bomberosmelipilla.cl", "Compañía 1ª", "Administrador", StatusRed),
-        AdminUser("CR", "Camila Rojas Vega", "camila.rojas@bomberosmelipilla.cl", "Compañía 2ª", "Encargado de flota", StatusOrange),
-        AdminUser("PS", "Pedro Soto Álvarez", "pedro.soto@bomberosmelipilla.cl", "Compañía 3ª", "Voluntario", StatusGreen)
-    )
+    var users by remember { mutableStateOf<List<AdminUser>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        try {
+            val response = RetrofitClient.apiService.getUsuarios()
+            if (response.isSuccessful && response.body()?.success == true) {
+                users = response.body()!!.usuarios.map { dto ->
+                    AdminUser(
+                        initials = dto.initials,
+                        realId = dto.id,
+                        name = dto.nombre,
+                        email = dto.email,
+                        compania = dto.compania,
+                        role = dto.rol,
+                        color = if (dto.rol.lowercase().contains("admin")) StatusRed else StatusGreen
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            users = listOf(
+                AdminUser("JP", 1, "Juan Pérez Soto", "juan.perez@bomberosmelipilla.cl", "Compañía 1ª", "Administrador", StatusRed),
+                AdminUser("CR", 2, "Camila Rojas Vega", "camila.rojas@bomberosmelipilla.cl", "Compañía 2ª", "Encargado de flota", StatusOrange),
+                AdminUser("PS", 3, "Pedro Soto Álvarez", "pedro.soto@bomberosmelipilla.cl", "Compañía 3ª", "Voluntario", StatusGreen)
+            )
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -324,5 +386,5 @@ fun AdminCardUI(
     }
 }
 
-data class AdminVehicle(val name: String, val patente: String, val compania: String, val tipo: String, val anio: String, val estado: String, val color: Color)
-data class AdminUser(val initials: String, val name: String, val email: String, val compania: String, val role: String, val color: Color)
+data class AdminVehicle(val name: String, val realId: Int = 0, val patente: String, val compania: String, val tipo: String, val anio: String, val estado: String, val color: Color)
+data class AdminUser(val initials: String, val realId: Int = 0, val name: String, val email: String, val compania: String, val role: String, val color: Color)

@@ -15,17 +15,23 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.app.network.NotificationHelper
+import com.example.app.network.RetrofitClient
+import com.example.app.network.VehiculoDto
 import com.example.app.ui.theme.*
+import kotlinx.coroutines.launch
 
 data class StatItem(val label: String, val value: String, val valueColor: Color)
 data class Vehiculo(
     val id: String,
+    val realId: Int = 0,
     val nombre: String,
     val patente: String,
     val compania: String,
@@ -33,6 +39,14 @@ data class Vehiculo(
     val estadoDetalle: String,
     val estadoColor: Color
 )
+
+fun parseHexColor(hex: String, defaultColor: Color = StatusGreen): Color {
+    return try {
+        Color(android.graphics.Color.parseColor(hex))
+    } catch (e: Exception) {
+        defaultColor
+    }
+}
 
 @Composable
 fun DashboardScreen(
@@ -62,7 +76,7 @@ fun DashboardScreen(
 
     // Manejador del gesto atrás/deslizar borde
     BackHandler(
-        enabled = true // Siempre habilitado para controlar la salida
+        enabled = true
     ) {
         when {
             isAddingUser -> isAddingUser = false
@@ -73,7 +87,7 @@ fun DashboardScreen(
             isAdminUsersActive -> isAdminUsersActive = false
             detailedVehicle != null -> detailedVehicle = null
             selectedTab != 0 -> selectedTab = 0
-            else -> showExitDialog = true // Estamos en el inicio, mostramos el diálogo
+            else -> showExitDialog = true
         }
     }
 
@@ -298,6 +312,64 @@ fun DashboardScreen(
 
 @Composable
 fun MainDashboardContent(onVehicleClick: (Vehiculo) -> Unit) {
+    val context = LocalContext.current
+    var totalCount by remember { mutableStateOf("5") }
+    var operativosCount by remember { mutableStateOf("2") }
+    var porVencerCount by remember { mutableStateOf("2") }
+    var vencidosCount by remember { mutableStateOf("1") }
+    var flotaList by remember { mutableStateOf<List<Vehiculo>>(emptyList()) }
+    var isLoading by remember { mutableStateOf(true) }
+
+    LaunchedEffect(Unit) {
+        try {
+            val response = RetrofitClient.apiService.getDashboard()
+            if (response.isSuccessful && response.body()?.success == true) {
+                val stats = response.body()!!.stats
+                totalCount = stats.totales.toString()
+                operativosCount = stats.operativos.toString()
+                porVencerCount = stats.porVencer.toString()
+                vencidosCount = stats.vencidos.toString()
+
+                flotaList = response.body()!!.flota.map { dto ->
+                    Vehiculo(
+                        id = dto.id,
+                        realId = dto.realId,
+                        nombre = dto.nombre,
+                        patente = dto.patente,
+                        compania = dto.compania,
+                        estadoText = dto.estadoText,
+                        estadoDetalle = dto.estadoDetalle,
+                        estadoColor = parseHexColor(dto.colorHex)
+                    )
+                }
+            }
+
+            // Consultar alertas para enviar notificaciones del sistema
+            val notifResp = RetrofitClient.apiService.getNotificaciones()
+            if (notifResp.isSuccessful && notifResp.body()?.success == true) {
+                notifResp.body()!!.notificaciones.forEachIndexed { index, notif ->
+                    NotificationHelper.showNotification(
+                        context = context,
+                        id = 1000 + index,
+                        title = notif.titulo,
+                        message = notif.mensaje
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            // Usar lista por defecto si la red falla
+            flotaList = listOf(
+                Vehiculo("B-1", 1, "Bomba Melipilla", "HXPL-21", "Compañía 1ª", "Mantención vencida", "Venció hace 6 días", StatusRed),
+                Vehiculo("B-2", 2, "Bomba Los Cerros", "FRWZ-88", "Compañía 2ª", "Vence en 5 días", "Programar mantención", StatusOrange),
+                Vehiculo("R-1", 3, "Rescute Vehicular", "KTLM-05", "Compañía 3ª", "Vence en 4 días", "Programar mantención", StatusOrange),
+                Vehiculo("B-3", 4, "Bomba Centro", "JNPX-47", "Compañía 4ª", "Operativo", "Próxima mantención en 79 días", StatusGreen),
+                Vehiculo("B-4", 5, "Bomba Forestal", "DGRT-63", "Compañía 1ª", "Operativo", "Próxima mantención en 95 días", StatusGreen)
+            )
+        } finally {
+            isLoading = false
+        }
+    }
+
     Column(
         modifier = Modifier
             .fillMaxSize()
@@ -342,10 +414,10 @@ fun MainDashboardContent(onVehicleClick: (Vehiculo) -> Unit) {
         ) {
             item {
                 val stats = listOf(
-                    StatItem("Vehículos totales", "5", MaterialTheme.colorScheme.onBackground),
-                    StatItem("Operativos", "2", StatusGreen),
-                    StatItem("Por vencer", "2", StatusOrange),
-                    StatItem("Alertas vencidas", "1", StatusRed)
+                    StatItem("Vehículos totales", totalCount, MaterialTheme.colorScheme.onBackground),
+                    StatItem("Operativos", operativosCount, StatusGreen),
+                    StatItem("Por vencer", porVencerCount, StatusOrange),
+                    StatItem("Alertas vencidas", vencidosCount, StatusRed)
                 )
                 
                 Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -370,15 +442,7 @@ fun MainDashboardContent(onVehicleClick: (Vehiculo) -> Unit) {
                 )
             }
 
-            val flota = listOf(
-                Vehiculo("B-1", "Bomba Melipilla", "HXPL-21", "Compañía 1ª", "Mantención vencida", "Venció hace 6 días", StatusRed),
-                Vehiculo("B-2", "Bomba Los Cerros", "FRWZ-88", "Compañía 2ª", "Vence en 5 días", "Programar mantención", StatusOrange),
-                Vehiculo("R-1", "Rescute Vehicular", "KTLM-05", "Compañía 3ª", "Vence en 4 días", "Programar mantención", StatusOrange),
-                Vehiculo("B-3", "Bomba Centro", "JNPX-47", "Compañía 4ª", "Operativo", "Próxima mantención en 79 días", StatusGreen),
-                Vehiculo("B-4", "Bomba Forestal", "DGRT-63", "Compañía 1ª", "Operativo", "Próxima mantención en 95 días", StatusGreen)
-            )
-
-            items(flota) { vehiculo ->
+            items(flotaList) { vehiculo ->
                 Card(
                     shape = RoundedCornerShape(16.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),

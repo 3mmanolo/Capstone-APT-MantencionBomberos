@@ -3,7 +3,6 @@ package com.example.app
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
@@ -12,17 +11,20 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -30,6 +32,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.app.network.RetrofitClient
 import com.example.app.ui.theme.AppTheme
 import com.example.app.ui.theme.BomberosBackground
 import com.example.app.ui.theme.BomberosRed
@@ -44,11 +47,37 @@ data class LogMantencion(
 
 @Composable
 fun HistoryDetailScreen(
+    realVehicleId: Int = 1,
     vehicleName: String,
     vehicleId: String,
     onBackClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    var listaMantenciones by remember { mutableStateOf<List<LogMantencion>>(emptyList()) }
+
+    LaunchedEffect(realVehicleId) {
+        try {
+            val response = RetrofitClient.apiService.getHistorialDetalle(realVehicleId)
+            if (response.isSuccessful && response.body()?.success == true) {
+                listaMantenciones = response.body()!!.logs.map { dto ->
+                    LogMantencion(
+                        fecha = dto.fecha,
+                        tipo = dto.tipo,
+                        responsable = dto.responsable,
+                        kilometraje = dto.kilometraje,
+                        observaciones = dto.observaciones
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            listaMantenciones = listOf(
+                LogMantencion("12 Feb 2025", "Mantención Preventiva", "Juan Pérez", "45.200 km", "Cambio de aceite de motor, filtros de aire y revisión de presión del sistema hidráulico."),
+                LogMantencion("28 Ene 2025", "Reparación de Luces", "Carlos Gómez", "44.800 km", "Se reemplazaron ampolletas LED de balizas frontales y se reparó cableado."),
+                LogMantencion("15 Dic 2024", "Revisión Técnica", "Planta Melipilla", "42.100 km", "Aprobada sin observaciones. Frenos y gases en óptimo estado.")
+            )
+        }
+    }
+
     Column(
         modifier = modifier
             .fillMaxSize()
@@ -85,13 +114,6 @@ fun HistoryDetailScreen(
                 )
             }
         }
-
-        val listaMantenciones = listOf(
-            LogMantencion("12 Feb 2025", "Mantención Preventiva", "Juan Pérez", "45.200 km", "Cambio de aceite de motor, filtros de aire y revisión de presión del sistema hidráulico de la bomba de agua."),
-            LogMantencion("28 Ene 2025", "Reparación de Luces", "Carlos Gómez", "44.800 km", "Se reemplazaron ampolletas LED de balizas frontales y se reparó cableado del tablero de control."),
-            LogMantencion("15 Dic 2024", "Revisión Técnica", "Planta Melipilla", "42.100 km", "Aprobada sin observaciones. Frenos y gases en óptimo estado."),
-            LogMantencion("02 Nov 2024", "Cambio de Neumáticos", "Juan Pérez", "39.500 km", "Reemplazo de los dos neumáticos del eje delantero por desgaste severo.")
-        )
 
         LazyColumn(
             modifier = Modifier.fillMaxSize(),
@@ -162,6 +184,6 @@ fun MantencionItemCard(mantencion: LogMantencion) {
 @Composable
 fun HistoryDetailScreenPreview() {
     AppTheme {
-        HistoryDetailScreen(vehicleName = "Bomba Melipilla", vehicleId = "B-1", onBackClick = {})
+        HistoryDetailScreen(realVehicleId = 1, vehicleName = "Bomba Melipilla", vehicleId = "B-1", onBackClick = {})
     }
 }

@@ -23,42 +23,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.app.ui.theme.AppTheme
 import com.example.app.ui.theme.BomberosBackground
-import com.example.app.ui.theme.BomberosRed
 
-@Composable
-fun AddVehicleScreen(onBack: () -> Unit) {
-    var codigo by remember { mutableStateOf("") }
-    var nombre by remember { mutableStateOf("") }
-    var patente by remember { mutableStateOf("") }
-    var anio by remember { mutableStateOf("") }
-    var kilometraje by remember { mutableStateOf("") }
-    var proximaMantencion by remember { mutableStateOf("") }
-
-    val companias = listOf("Compañía 1ª", "Compañía 2ª", "Compañía 3ª", "Compañía 4ª")
-    var selectedCompania by remember { mutableStateOf(companias[0]) }
-    var expandedCompania by remember { mutableStateOf(false) }
-
-    val tipos = listOf("Carro bomba", "Rescate", "Forestal", "Escala")
-    var selectedTipo by remember { mutableStateOf(tipos[0]) }
-    var expandedTipo by remember { mutableStateOf(false) }
-
-    Column(
-        modifier = Modifier
-            .fillMaxSize()
-            .background(MaterialTheme.colorScheme.background)
-    ) {
-        // Header
-        Row(
-            modifier = Modifier
-                .fillMaxWidth()
-                .background(BomberosBackground) // El header se mantiene institucional oscuro
-                .padding(16.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(Color.White.copy(alpha = 0.1f), CircleShape)
                     .clickable { onBack() },
                 contentAlignment = Alignment.Center
             ) {

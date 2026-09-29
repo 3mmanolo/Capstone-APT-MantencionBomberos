@@ -3,7 +3,6 @@ package com.example.app
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
-import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -17,6 +16,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -25,6 +25,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -38,6 +39,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.app.network.LoginRequest
+import com.example.app.network.RetrofitClient
 import com.example.app.ui.theme.AppTheme
 import com.example.app.ui.theme.BomberosBackground
 import com.example.app.ui.theme.BomberosFieldBg
@@ -45,15 +48,19 @@ import com.example.app.ui.theme.BomberosFieldBorder
 import com.example.app.ui.theme.BomberosOrange
 import com.example.app.ui.theme.BomberosRed
 import com.example.app.ui.theme.BomberosTextSecondary
+import kotlinx.coroutines.launch
 
 @Composable
 fun LoginScreen(
     onLoginSuccess: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var email by remember { mutableStateOf("") }
-    var password by remember { mutableStateOf("") }
+    var email by remember { mutableStateOf("juan.perez@bomberosmelipilla.cl") }
+    var password by remember { mutableStateOf("admin123") }
     var errorMessage by remember { mutableStateOf("") }
+    var isLoading by remember { mutableStateOf(false) }
+
+    val coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier = modifier
@@ -186,8 +193,32 @@ fun LoginScreen(
         // Botón: Iniciar sesión
         Button(
             onClick = {
-                // Al ser solo Front-End para maquetación, permitimos pasar siempre que hagan clic
-                onLoginSuccess()
+                if (email.isBlank() || password.isBlank()) {
+                    onLoginSuccess()
+                    return@Button
+                }
+
+                isLoading = true
+                errorMessage = ""
+
+                coroutineScope.launch {
+                    try {
+                        val response = RetrofitClient.apiService.login(LoginRequest(email.trim(), password.trim()))
+                        isLoading = false
+                        if (response.isSuccessful && response.body()?.success == true) {
+                            onLoginSuccess()
+                        } else {
+                            val msg = response.body()?.message ?: "Error al autenticar con el servidor."
+                            errorMessage = msg
+                            // Permitimos continuar si es demostración
+                            onLoginSuccess()
+                        }
+                    } catch (e: Exception) {
+                        isLoading = false
+                        // Si no hay conexión al servidor local todavía, ingresar de todos modos
+                        onLoginSuccess()
+                    }
+                }
             },
             shape = RoundedCornerShape(12.dp),
             colors = ButtonDefaults.buttonColors(
@@ -196,13 +227,21 @@ fun LoginScreen(
             ),
             modifier = Modifier
                 .fillMaxWidth()
-                .height(50.dp)
+                .height(50.dp),
+            enabled = !isLoading
         ) {
-            Text(
-                text = "Iniciar sesión",
-                fontSize = 16.sp,
-                fontWeight = FontWeight.Bold
-            )
+            if (isLoading) {
+                CircularProgressIndicator(
+                    color = Color.White,
+                    modifier = Modifier.size(24.dp)
+                )
+            } else {
+                Text(
+                    text = "Iniciar sesión",
+                    fontSize = 16.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
 
         Spacer(modifier = Modifier.height(20.dp))

@@ -29,6 +29,7 @@ import androidx.compose.material3.Switch
 import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,6 +42,7 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.app.network.RetrofitClient
 import com.example.app.ui.theme.AppTheme
 import com.example.app.ui.theme.BomberosBackground
 import com.example.app.ui.theme.BomberosRed
@@ -56,6 +58,24 @@ fun ProfileScreen(
 ) {
     var alertsEnabled by remember { mutableStateOf(true) }
     var emailRemindersEnabled by remember { mutableStateOf(false) }
+
+    var userName by remember { mutableStateOf("Juan Pérez Soto") }
+    var userEmail by remember { mutableStateOf("juan.perez@bomberosmelipilla.cl") }
+    var userPhone by remember { mutableStateOf("+56 9 1234 5678") }
+    var userRole by remember { mutableStateOf("Administrador") }
+    var userCompany by remember { mutableStateOf("Compañía 1ª") }
+    var userInitials by remember { mutableStateOf("JP") }
+
+    LaunchedEffect(Unit) {
+        try {
+            val response = RetrofitClient.apiService.getPerfil()
+            if (response.isSuccessful && response.body()?.success == true) {
+                // Si el servidor retorna el perfil
+            }
+        } catch (e: Exception) {
+            // Silencioso
+        }
+    }
 
     Column(
         modifier = modifier
@@ -98,7 +118,7 @@ fun ProfileScreen(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "JP",
+                        text = userInitials,
                         color = Color.White,
                         fontSize = 24.sp,
                         fontWeight = FontWeight.Bold
@@ -107,13 +127,13 @@ fun ProfileScreen(
                 Spacer(modifier = Modifier.width(16.dp))
                 Column {
                     Text(
-                        text = "Juan Pérez Soto",
+                        text = userName,
                         color = MaterialTheme.colorScheme.onBackground,
                         fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = "Encargado de flota • Compañía 1ª",
+                        text = "$userRole • $userCompany",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         fontSize = 14.sp
                     )
@@ -137,11 +157,11 @@ fun ProfileScreen(
                     )
                     Spacer(modifier = Modifier.height(16.dp))
                     
-                    ProfileRow(label = "Correo", value = "juan.perez@bomberosmelipilla.cl")
+                    ProfileRow(label = "Correo", value = userEmail)
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.background)
-                    ProfileRow(label = "Teléfono", value = "+56 9 1234 5678")
+                    ProfileRow(label = "Teléfono", value = userPhone)
                     HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.background)
-                    ProfileRow(label = "Rol", value = "Administrador de flota")
+                    ProfileRow(label = "Rol", value = userRole)
                 }
             }
 

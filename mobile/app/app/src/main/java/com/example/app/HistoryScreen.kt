@@ -22,6 +22,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -33,6 +34,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.app.network.RetrofitClient
 import com.example.app.ui.theme.AppTheme
 import com.example.app.ui.theme.BomberosBackground
 import com.example.app.ui.theme.StatusGreen
@@ -40,6 +42,7 @@ import com.example.app.ui.theme.StatusOrange
 
 data class HistoryItem(
     val id: String,
+    val realId: Int = 1,
     val nombre: String,
     val patente: String,
     val compania: String,
@@ -50,6 +53,34 @@ data class HistoryItem(
 @Composable
 fun HistoryScreen(modifier: Modifier = Modifier) {
     var selectedVehicle by remember { mutableStateOf<HistoryItem?>(null) }
+    var historyData by remember { mutableStateOf<List<HistoryItem>>(emptyList()) }
+
+    LaunchedEffect(Unit) {
+        try {
+            val response = RetrofitClient.apiService.getHistorial()
+            if (response.isSuccessful && response.body()?.success == true) {
+                historyData = response.body()!!.historial.map { dto ->
+                    HistoryItem(
+                        id = dto.id,
+                        realId = dto.realId,
+                        nombre = dto.nombre,
+                        patente = dto.patente,
+                        compania = dto.compania,
+                        registros = dto.registros,
+                        color = parseHexColor(dto.colorHex)
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            historyData = listOf(
+                HistoryItem("B-1", 1, "Bomba Melipilla", "HXPL-21", "Compañía 1ª", 4, StatusGreen),
+                HistoryItem("B-2", 2, "Bomba Los Cerros", "FRWZ-88", "Compañía 2ª", 2, StatusOrange),
+                HistoryItem("R-1", 3, "Rescute Vehicular", "KTLM-05", "Compañía 3ª", 1, StatusOrange),
+                HistoryItem("B-3", 4, "Bomba Centro", "JNPX-47", "Compañía 4ª", 1, StatusGreen),
+                HistoryItem("B-4", 5, "Bomba Forestal", "DGRT-63", "Compañía 1ª", 1, StatusGreen)
+            )
+        }
+    }
 
     // Manejador del gesto atrás/deslizar borde en el historial
     BackHandler(enabled = selectedVehicle != null) {
@@ -58,6 +89,7 @@ fun HistoryScreen(modifier: Modifier = Modifier) {
 
     if (selectedVehicle != null) {
         HistoryDetailScreen(
+            realVehicleId = selectedVehicle!!.realId,
             vehicleId = selectedVehicle!!.id,
             vehicleName = selectedVehicle!!.nombre,
             onBackClick = { selectedVehicle = null }
@@ -88,14 +120,6 @@ fun HistoryScreen(modifier: Modifier = Modifier) {
                     fontSize = 14.sp
                 )
             }
-
-            val historyData = listOf(
-                HistoryItem("B-1", "Bomba Melipilla", "HXPL-21", "Compañía 1ª", 4, StatusGreen),
-                HistoryItem("B-2", "Bomba Los Cerros", "FRWZ-88", "Compañía 2ª", 2, StatusOrange),
-                HistoryItem("R-1", "Rescute Vehicular", "KTLM-05", "Compañía 3ª", 1, StatusOrange),
-                HistoryItem("B-3", "Bomba Centro", "JNPX-47", "Compañía 4ª", 1, StatusGreen),
-                HistoryItem("B-4", "Bomba Forestal", "DGRT-63", "Compañía 1ª", 1, StatusGreen)
-            )
 
             LazyColumn(
                 modifier = Modifier.fillMaxSize(),
