@@ -29,6 +29,7 @@ urlpatterns = [
     path('historial/', views.historial, name='historial'),
     path('usuarios/', views.usuarios, name='usuarios'),
     path('detalle/<int:vehiculo_id>/', views.detalle, name='detalle'),
+    path('vehidetalle/<int:vehiculo_id>/', views.vehidetalle, name='vehidetalle'),
 
 
 
