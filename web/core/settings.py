@@ -38,9 +38,24 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'core',
+    'rest_framework',
+    'rest_framework.authtoken', # Recomendado para manejo de tokens básicos
+    'corsheaders',
 ]
 
+
+REST_FRAMEWORK = {
+    'DEFAULT_AUTHENTICATION_CLASSES': [
+        'rest_framework.authentication.TokenAuthentication',
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
+    ],
+}
+
 MIDDLEWARE = [
+    'corsheaders.middleware.CorsMiddleware',  # Debe ir lo más arriba posible
+    'django.middleware.common.CommonMiddleware',
     'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
@@ -135,3 +150,11 @@ STATIC_URL = 'static/'
 
 # Necesario cuando vayas a desplegar (docker collectstatic)
 STATIC_ROOT = BASE_DIR / 'staticfiles'
+
+
+
+# Durante la fase de desarrollo, permite peticiones desde cualquier origen (app móvil, emuladores, etc.)
+CORS_ALLOW_ALL_ORIGINS = True
+
+# Opcional: Si deseas habilitar el envío de credenciales o tokens en los headers
+CORS_ALLOW_CREDENTIALS = True
