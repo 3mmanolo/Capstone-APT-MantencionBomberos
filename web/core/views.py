@@ -55,44 +55,27 @@ def dashboard(request):
         'isAdmin': request.user.is_superuser or perfil.rol.lower() == 'administrador'
     }
 
-    # Conteos y estado de cada vehiculo con datos reales (estado operativo +
-    # fecha de proxima_mantencion), reusando la misma logica que la vista
-    # 'vehiculos' para que el dashboard y el listado siempre coincidan.
-    hoy = timezone.localdate()
-    flota = []
-    vehiculos_operativos = 0
-    vehiculos_por_vencer = 0
-    vehiculos_vencidos = 0
-
-    for v in Vehiculo.objects.select_related('id_compania').all():
-        badge = _estado_visual_vehiculo(v, hoy)
-        if badge['status'] == 'green':
-            vehiculos_operativos += 1
-        elif badge['status'] == 'amber':
-            vehiculos_por_vencer += 1
-        elif badge['status'] == 'danger':
-            vehiculos_vencidos += 1
-
-        flota.append({
-            'id': v.pk,
-            'modelo': v.modelo,
-            'tipo_v': v.tipo_v,
-            'patente': v.patente or 'Sin patente',
-            'compania': v.id_compania.nombre if v.id_compania else 'Sin compañía',
-            'badge_status': badge['status'],
-            'badge_label': badge['label'],
-        })
-
     context = {
         'current_user': current_user_data,
-        'total_vehiculos': len(flota),
-        'vehiculos_operativos': vehiculos_operativos,
-        'vehiculos_por_vencer': vehiculos_por_vencer,
-        'vehiculos_vencidos': vehiculos_vencidos,
-        'flota': flota,
+        'total_vehiculos': Vehiculo.objects.count(),
+        'vehiculos_operativos': Vehiculo.objects.filter(estado__iexact='operativo').count(),
+        'vehiculos_por_vencer': Vehiculo.objects.filter(estado__iexact='por vencer').count(),
+        'vehiculos_vencidos': Vehiculo.objects.filter(estado__iexact='vencido').count(),
+        'flota': Vehiculo.objects.select_related('id_compania').all(),
     }
 
     return render(request, 'core/dashboard.html', context)
+    
+@login_required(login_url='index')
+def vehidetalle(request, vehiculo_id):
+    vehiculo = get_object_or_404(Vehiculo, pk=vehiculo_id)
+    mantenciones = Mantencion.objects.filter(id_vehi=vehiculo)
+    
+    context = {
+        'vehiculo': vehiculo,
+        'mantenciones': mantenciones,
+    }
+    return render(request, 'core/detalle.html', context)
 
 
 @login_required(login_url='index')

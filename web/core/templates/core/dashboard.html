@@ -6,7 +6,7 @@
 <meta charset="UTF-8">
 <title>Dashboard - Control de mantención | Bomberos Talcahuano</title>
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
-<link rel="icon" type="image/png" href="/imagenes/logo.png">
+<link rel="icon" type="image/png" href="{% static 'imagenes/logo.png' %}">
 <link rel="stylesheet" href="{% static 'styles.css' %}">
 </head>
 <body>
@@ -14,25 +14,25 @@
 <div class="layout">
   <div class="sidebar">
     <div class="sidebar-brand">
-      <div class="logo"><img src="/imagenes/logo2.png" alt="Logo Control de mantención"></div>
+      <div class="logo"><img src="{% static 'imagenes/logo2.png' %}" alt="Logo Control de mantención"></div>
       <div><p class="t1">Control de mantención</p><p class="t2">Bomberos Talcahuano</p></div>
     </div>
-    <a class="nav-item active" href="{% url 'dashboard'  %}"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg>Dashboard</a>
+    <a class="nav-item active" href="{% url 'dashboard' %}"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg>Dashboard</a>
     <a class="nav-item" href="{% url 'historial' %}"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="8.5"/><polyline points="12 7.5 12 12 15.2 14.2"/></svg>Historial</a>
-<a class="nav-item" href="{% url 'registrar' %}"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Registrar mantención</a>
-    <a class="nav-item nav-vehiculos" href="{% url  'vehiculos' %}" style="display:none;"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="11" height="8" rx="1"/><path d="M13 11h4l3 3v2h-3"/><circle cx="7" cy="18" r="1.6"/><circle cx="16.5" cy="18" r="1.6"/></svg>Vehículos</a>
-<a class="nav-item nav-usuarios" href="{% url 'usuarios' %}" style="display:none;"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"/><path d="M2.5 20c0-3.6 2.7-6 6-6s6 2.4 6 6"/><circle cx="17" cy="8.5" r="2.4"/><path d="M15.2 14.2c2.7 0.2 4.8 2.3 4.8 5.8"/></svg>Usuarios</a>
+    <a class="nav-item" href="{% url 'registrar' %}"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>Registrar mantención</a>
+    <a class="nav-item nav-vehiculos" href="{% url 'vehiculos' %}" style="display:none;"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="8" width="11" height="8" rx="1"/><path d="M13 11h4l3 3v2h-3"/><circle cx="7" cy="18" r="1.6"/><circle cx="16.5" cy="18" r="1.6"/></svg>Vehículos</a>
+    <a class="nav-item nav-usuarios" href="{% url 'usuarios' %}" style="display:none;"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"/><path d="M2.5 20c0-3.6 2.7-6 6-6s6 2.4 6 6"/><circle cx="17" cy="8.5" r="2.4"/><path d="M15.2 14.2c2.7 0.2 4.8 2.3 4.8 5.8"/></svg>Usuarios</a>
     <div class="sidebar-footer">
-          <a class="nav-item" href="{% url 'perfil' %}"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-4.1 3.4-7.4 7.5-7.4s7.5 3.3 7.5 7.4"/></svg>Mi perfil</a>
+      <a class="nav-item" href="{% url 'perfil' %}"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="8" r="3.6"/><path d="M4.5 20c0-4.1 3.4-7.4 7.5-7.4s7.5 3.3 7.5 7.4"/></svg>Mi perfil</a>
 
-    <a class="sidebar-user" href="{% url 'logout' %}" style="margin-top:6px; text-decoration:none;">
+      <a class="sidebar-user" href="{% url 'logout' %}" style="margin-top:6px; text-decoration:none;">
         <div class="av">{{ current_user.initials }}</div>
         <div>
-            <p class="name">{{ current_user.name }}</p>
-            <p class="role">Cerrar sesión</p>
+          <p class="name">{{ current_user.name }}</p>
+          <p class="role">Cerrar sesión</p>
         </div>
-    </a>
-</div>
+      </a>
+    </div>
   </div>
 
   <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
@@ -46,10 +46,10 @@
         <i class="ti ti-bell" style="font-size:18px; color:var(--text2); cursor:pointer;"></i>
         <div style="width:1px; height:24px; background:var(--border);"></div>
         <div style="display:flex; align-items:center; gap:8px;">
-         <div style="width:30px; height:30px; border-radius:50%; background:var(--red); display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:700;">
-    {{ current_user.initials }}
-</div>
-<span style="font-size:13px; font-weight:600;">{{ current_user.name }}</span>
+          <div style="width:30px; height:30px; border-radius:50%; background:var(--red); display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:700;">
+            {{ current_user.initials }}
+          </div>
+          <span style="font-size:13px; font-weight:600;">{{ current_user.name }}</span>
         </div>
       </div>
     </div>
@@ -79,15 +79,15 @@
       </div>
       <div class="card" style="padding:0; overflow:hidden;">
         <table>
-          <thead><tr><th>Vehículo</th><th>Patente</th><th>Compañía</th><th>Tipo</th><th>Estado</th><th></th></tr></thead>
+          <thead><tr><th>Vehículo</th><th>Patente</th><th>Compañía</th><th>Estado</th><th></th></tr></thead>
           <tbody>
             {% for v in flota %}
-            <tr class="clickable" onclick="window.location.href='{% url 'detalle' v.id %}'">
-              <td style="font-weight:600;"><span style="display:inline-flex; align-items:center; gap:10px;"><i class="ti ti-truck" style="color:var(--text2); font-size:17px;"></i>{{ v.modelo }}</span></td>
+            <!-- USA v.pk SI id_vehi NO ES LA CLAVE PRIMARIA DEFINIDA EN MODELS.PY -->
+             <tr class="clickable" data-href="{% url 'vehidetalle' v.id_vehi %}" onclick="window.location.href=this.dataset.href">
+              <td style="font-weight:600;"><span style="display:inline-flex; align-items:center; gap:10px;"><i class="ti ti-truck" style="color:var(--text2); font-size:17px;"></i>{{ v.modelo }}  . {{v.tipo_v }}</span></td>
               <td style="color:var(--text2);">{{ v.patente }}</td>
-              <td style="color:var(--text2);">{{ v.compania }}</td>
-              <td style="color:var(--text2);">{{ v.tipo_v }}</td>
-              <td><span class="pill pill-{{ v.badge_status }}">{{ v.badge_label }}</span></td>
+              <td style="color:var(--text2);">{{ v.id_compania }}</td>
+              <td><span class="pill pill-{{ v.badge_status }}">{{ v.estado }}</span></td>
               <td style="text-align:right; color:var(--text2);"><i class="ti ti-chevron-right"></i></td>
             </tr>
             {% empty %}
