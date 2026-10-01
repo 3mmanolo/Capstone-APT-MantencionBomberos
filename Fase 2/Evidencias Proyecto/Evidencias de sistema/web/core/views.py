@@ -14,11 +14,11 @@ from django.utils.safestring import mark_safe
 
 
 from django.urls import path
-from . import api_views
+#from . import api_views
 from rest_framework.authtoken.views import obtain_auth_token
 
 urlpatterns = [
-    path('api/elementos/', api_views.lista_elementos, name='api_lista'),
+    #path('api/elementos/', api_views.lista_elementos, name='api_lista'),
     path('api/login/', obtain_auth_token, name='api_token_auth'), # Devuelve el token al usuario móvil
 ]
 
