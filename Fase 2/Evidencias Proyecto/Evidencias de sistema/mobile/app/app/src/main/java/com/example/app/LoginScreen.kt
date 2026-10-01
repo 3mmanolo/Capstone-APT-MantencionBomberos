@@ -55,8 +55,8 @@ fun LoginScreen(
     onLoginSuccess: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    var email by remember { mutableStateOf("juan.perez@bomberosmelipilla.cl") }
-    var password by remember { mutableStateOf("admin123") }
+    var email by remember { mutableStateOf("") }
+    var password by remember { mutableStateOf("") }
     var errorMessage by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
 
@@ -194,7 +194,7 @@ fun LoginScreen(
         Button(
             onClick = {
                 if (email.isBlank() || password.isBlank()) {
-                    onLoginSuccess()
+                    errorMessage = "Por favor ingresa usuario/correo y contraseña."
                     return@Button
                 }
 
@@ -208,15 +208,12 @@ fun LoginScreen(
                         if (response.isSuccessful && response.body()?.success == true) {
                             onLoginSuccess()
                         } else {
-                            val msg = response.body()?.message ?: "Error al autenticar con el servidor."
+                            val msg = response.body()?.message ?: "Credenciales incorrectas. Intenta nuevamente."
                             errorMessage = msg
-                            // Permitimos continuar si es demostración
-                            onLoginSuccess()
                         }
                     } catch (e: Exception) {
                         isLoading = false
-                        // Si no hay conexión al servidor local todavía, ingresar de todos modos
-                        onLoginSuccess()
+                        errorMessage = "Error de conexión: No se pudo conectar al servidor de la base de datos."
                     }
                 }
             },

@@ -8,8 +8,11 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    // IP predeterminada para el emulador de Android comunicándose con localhost de la PC
-    private const val BASE_URL = "http://10.0.2.2:8000/"
+    // Configuración de URL Base:
+    // - Para Emulador Android en la misma PC: "http://10.0.2.2:8000/"
+    // - Para Dispositivo Físico en la misma Wi-Fi: "http://192.168.X.X:8000/" (Reemplazar X por la IP de tu PC)
+    // - Para Servidor en Producción/Nube: "https://tu-dominio-o-servidor.com/"
+    const val BASE_URL = "http://10.0.2.2:8000/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
@@ -19,6 +22,7 @@ object RetrofitClient {
         .addInterceptor(loggingInterceptor)
         .connectTimeout(15, TimeUnit.SECONDS)
         .readTimeout(15, TimeUnit.SECONDS)
+        .writeTimeout(15, TimeUnit.SECONDS)
         .build()
 
     val apiService: ApiService by lazy {

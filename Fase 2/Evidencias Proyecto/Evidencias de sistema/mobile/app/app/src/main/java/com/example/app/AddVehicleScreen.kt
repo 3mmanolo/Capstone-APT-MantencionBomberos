@@ -1,6 +1,5 @@
 package com.example.app
 
-import android.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -15,7 +14,6 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -23,7 +21,43 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.app.ui.theme.AppTheme
 import com.example.app.ui.theme.BomberosBackground
+import com.example.app.ui.theme.BomberosRed
 
+@Composable
+fun AddVehicleScreen(onBack: () -> Unit) {
+    var codigo by remember { mutableStateOf("") }
+    var nombre by remember { mutableStateOf("") }
+    var patente by remember { mutableStateOf("") }
+
+    val companias = listOf("Compañía 1ª", "Compañía 2ª", "Compañía 3ª", "Compañía 4ª")
+    var selectedCompania by remember { mutableStateOf(companias[0]) }
+    var expandedCompania by remember { mutableStateOf(false) }
+
+    val tipos = listOf("Carro Bomba", "Rescate", "Hazmat", "Escala Mecánica", "Agua")
+    var selectedTipo by remember { mutableStateOf(tipos[0]) }
+    var expandedTipo by remember { mutableStateOf(false) }
+
+    var anio by remember { mutableStateOf("") }
+    var kilometraje by remember { mutableStateOf("") }
+    var proximaMantencion by remember { mutableStateOf("") }
+
+    Column(
+        modifier = Modifier
+            .fillMaxSize()
+            .background(MaterialTheme.colorScheme.background)
+    ) {
+        // Header
+        Row(
+            modifier = Modifier
+                .fillMaxWidth()
+                .background(BomberosBackground)
+                .padding(16.dp),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            Box(
+                modifier = Modifier
+                    .size(40.dp)
+                    .background(Color.White.copy(alpha = 0.1f), CircleShape)
                     .clickable { onBack() },
                 contentAlignment = Alignment.Center
             ) {
@@ -185,14 +219,6 @@ import com.example.app.ui.theme.BomberosBackground
                     placeholder = { Text("dd-mm-aaaa", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
-                    trailingIcon = { 
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_menu_my_calendar),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        ) 
-                    },
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = MaterialTheme.colorScheme.onSurface,
                         unfocusedTextColor = MaterialTheme.colorScheme.onSurface,
@@ -222,7 +248,7 @@ import com.example.app.ui.theme.BomberosBackground
                 }
 
                 Button(
-                    onClick = { /* Acción guardar */ },
+                    onClick = { onBack() },
                     modifier = Modifier.weight(1f).height(55.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = BomberosRed, contentColor = Color.White)
