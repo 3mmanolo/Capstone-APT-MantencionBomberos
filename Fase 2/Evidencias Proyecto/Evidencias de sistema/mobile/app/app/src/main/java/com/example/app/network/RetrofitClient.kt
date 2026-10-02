@@ -8,11 +8,8 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    // Configuración de URL Base:
-    // - Para Emulador Android en la misma PC: "http://10.0.2.2:8000/"
-    // - Para Dispositivo Físico en la misma Wi-Fi: "http://192.168.X.X:8000/" (Reemplazar X por la IP de tu PC)
-    // - Para Servidor en Producción/Nube: "https://tu-dominio-o-servidor.com/"
-    const val BASE_URL = "http://10.0.2.2:8000/"
+    // IP local de tu PC en la Wi-Fi (para probar desde el celular físico):
+    const val BASE_URL = "http://10.81.93.203:8000/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
