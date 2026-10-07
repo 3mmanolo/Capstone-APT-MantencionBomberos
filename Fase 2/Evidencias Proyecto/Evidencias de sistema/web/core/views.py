@@ -108,6 +108,14 @@ def vehidetalle(request, vehiculo_id):
     return render(request, 'core/detalle.html', context)
 
 
+def cambiar_estado(request, id_vehi):
+    vehiculo = get_object_or_404(Vehiculo, pk=id_vehi)
+    vehiculo.estado = 'operativo'
+    vehiculo.save()
+    
+    # Redirige usando el argumento posicional o vehiculo_id=id_vehi
+    return redirect('vehidetalle', vehiculo_id=id_vehi)
+
 @login_required(login_url='index')
 def registrar(request):
     vehiculos = Vehiculo.objects.all()
