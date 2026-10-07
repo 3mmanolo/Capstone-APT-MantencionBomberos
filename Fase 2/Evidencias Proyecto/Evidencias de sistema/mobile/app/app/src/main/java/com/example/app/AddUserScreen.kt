@@ -17,22 +17,31 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.app.network.GuardarUsuarioRequest
+import com.example.app.network.RetrofitClient
 import com.example.app.ui.theme.AppTheme
 import com.example.app.ui.theme.BomberosBackground
 import com.example.app.ui.theme.BomberosRed
+import kotlinx.coroutines.launch
 
 @Composable
 fun AddUserScreen(onBack: () -> Unit) {
     var nombre by remember { mutableStateOf("") }
     var correo by remember { mutableStateOf("") }
+    var telefono by remember { mutableStateOf("") }
 
     val companias = listOf("Compañía 1ª", "Compañía 2ª", "Compañía 3ª", "Compañía 4ª")
     var selectedCompania by remember { mutableStateOf(companias[0]) }
     var expandedCompania by remember { mutableStateOf(false) }
 
-    val roles = listOf("Administrador", "Encargado de flota", "Voluntario")
+    val roles = listOf("Administrador", "Encargado de flota", "Voluntario", "Maquinista")
     var selectedRol by remember { mutableStateOf(roles[0]) }
     var expandedRol by remember { mutableStateOf(false) }
+
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+
+    val coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -79,6 +88,14 @@ fun AddUserScreen(onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            if (errorMessage.isNotEmpty()) {
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
             // Nombre completo
             FormField(
                 label = "Nombre completo", 
@@ -93,6 +110,14 @@ fun AddUserScreen(onBack: () -> Unit) {
                 value = correo, 
                 onValueChange = { correo = it }, 
                 placeholder = "nombre.apellido@bomberosmelipilla.cl"
+            )
+
+            // Teléfono
+            FormField(
+                label = "Teléfono de contacto", 
+                value = telefono, 
+                onValueChange = { telefono = it }, 
+                placeholder = "+56 9 1234 5678"
             )
 
             // Compañía
@@ -199,18 +224,53 @@ fun AddUserScreen(onBack: () -> Unit) {
                     modifier = Modifier.weight(1f).height(55.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onBackground),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)),
+                    enabled = !isLoading
                 ) {
                     Text(text = "Cancelar", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
 
                 Button(
-                    onClick = { /* Acción guardar */ },
+                    onClick = {
+                        if (nombre.isBlank() || correo.isBlank()) {
+                            errorMessage = "Por favor ingresa nombre y correo."
+                            return@Button
+                        }
+                        isLoading = true
+                        errorMessage = ""
+                        coroutineScope.launch {
+                            try {
+                                val compIndex = companias.indexOf(selectedCompania) + 1
+                                val request = GuardarUsuarioRequest(
+                                    nombre = nombre,
+                                    email = correo,
+                                    rol = selectedRol,
+                                    companiaId = compIndex,
+                                    telefono = telefono
+                                )
+                                val response = RetrofitClient.apiService.guardarUsuario(request)
+                                isLoading = false
+                                if (response.isSuccessful && response.body()?.success == true) {
+                                    onBack()
+                                } else {
+                                    errorMessage = response.body()?.message ?: "Error al guardar usuario."
+                                }
+                            } catch (e: Exception) {
+                                isLoading = false
+                                errorMessage = "Error de conexión: ${e.localizedMessage}"
+                            }
+                        }
+                    },
                     modifier = Modifier.weight(1f).height(55.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = BomberosRed, contentColor = Color.White)
+                    colors = ButtonDefaults.buttonColors(containerColor = BomberosRed, contentColor = Color.White),
+                    enabled = !isLoading
                 ) {
-                    Text(text = "Guardar usuario", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    if (isLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    } else {
+                        Text(text = "Guardar usuario", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }

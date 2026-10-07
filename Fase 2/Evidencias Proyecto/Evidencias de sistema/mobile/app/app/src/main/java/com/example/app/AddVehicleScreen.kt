@@ -19,9 +19,12 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.app.network.GuardarVehiculoRequest
+import com.example.app.network.RetrofitClient
 import com.example.app.ui.theme.AppTheme
 import com.example.app.ui.theme.BomberosBackground
 import com.example.app.ui.theme.BomberosRed
+import kotlinx.coroutines.launch
 
 @Composable
 fun AddVehicleScreen(onBack: () -> Unit) {
@@ -40,6 +43,11 @@ fun AddVehicleScreen(onBack: () -> Unit) {
     var anio by remember { mutableStateOf("") }
     var kilometraje by remember { mutableStateOf("") }
     var proximaMantencion by remember { mutableStateOf("") }
+
+    var isLoading by remember { mutableStateOf(false) }
+    var errorMessage by remember { mutableStateOf("") }
+
+    val coroutineScope = rememberCoroutineScope()
 
     Column(
         modifier = Modifier
@@ -86,6 +94,14 @@ fun AddVehicleScreen(onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
+            if (errorMessage.isNotEmpty()) {
+                Text(
+                    text = errorMessage,
+                    color = MaterialTheme.colorScheme.error,
+                    style = MaterialTheme.typography.bodySmall
+                )
+            }
+
             // Código interno
             FormField(label = "Código interno", value = codigo, onValueChange = { codigo = it }, placeholder = "Ej: B-5")
 
@@ -216,7 +232,7 @@ fun AddVehicleScreen(onBack: () -> Unit) {
                 OutlinedTextField(
                     value = proximaMantencion,
                     onValueChange = { proximaMantencion = it },
-                    placeholder = { Text("dd-mm-aaaa", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
+                    placeholder = { Text("YYYY-MM-DD", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -242,18 +258,56 @@ fun AddVehicleScreen(onBack: () -> Unit) {
                     modifier = Modifier.weight(1f).height(55.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onBackground),
-                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
+                    border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)),
+                    enabled = !isLoading
                 ) {
                     Text(text = "Cancelar", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
 
                 Button(
-                    onClick = { onBack() },
+                    onClick = {
+                        if (nombre.isBlank() || patente.isBlank()) {
+                            errorMessage = "Por favor ingresa nombre y patente."
+                            return@Button
+                        }
+                        isLoading = true
+                        errorMessage = ""
+                        coroutineScope.launch {
+                            try {
+                                val compIndex = companias.indexOf(selectedCompania) + 1
+                                val km = kilometraje.toDoubleOrNull() ?: 0.0
+                                val request = GuardarVehiculoRequest(
+                                    nombre = nombre,
+                                    patente = patente,
+                                    tipo = selectedTipo,
+                                    anio = anio.ifBlank { "2024" },
+                                    kilometraje = km,
+                                    companiaId = compIndex,
+                                    proximaMantencion = proximaMantencion.ifBlank { null }
+                                )
+                                val response = RetrofitClient.apiService.guardarVehiculo(request)
+                                isLoading = false
+                                if (response.isSuccessful && response.body()?.success == true) {
+                                    onBack()
+                                } else {
+                                    errorMessage = response.body()?.message ?: "Error al guardar vehículo."
+                                }
+                            } catch (e: Exception) {
+                                isLoading = false
+                                errorMessage = "Error de conexión: ${e.localizedMessage}"
+                            }
+                        }
+                    },
                     modifier = Modifier.weight(1f).height(55.dp),
                     shape = RoundedCornerShape(12.dp),
-                    colors = ButtonDefaults.buttonColors(containerColor = BomberosRed, contentColor = Color.White)
+                    colors = ButtonDefaults.buttonColors(containerColor = BomberosRed, contentColor = Color.White),
+                    enabled = !isLoading
                 ) {
-                    Text(text = "Guardar vehículo", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    if (isLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                    } else {
+                        Text(text = "Guardar vehículo", fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))

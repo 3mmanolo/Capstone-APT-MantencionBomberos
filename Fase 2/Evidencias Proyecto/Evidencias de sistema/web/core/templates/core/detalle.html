@@ -86,15 +86,22 @@
           {% endfor %}
         </div>
 
-        <div class="card">
-          <p style="font-size:13px; font-weight:700; margin:0 0 12px;">Acciones</p>
-          <a class="btn-primary" style="width:100%; margin-bottom:10px; display:block; text-align:center;" href="{% url 'registrar' %}?vehiculo_id={{ vehiculo.pk }}">
-            Registrar mantención
-          </a>
-          <a class="btn-secondary" style="width:100%; margin-bottom:10px; display:block; text-align:center;" href="{% url 'historial' %}?vehiculo_id={{ vehiculo.pk }}">
-            Ver historial completo
-          </a>
-        </div>
+       <div class="card">
+    <p style="font-size:13px; font-weight:700; margin:0 0 12px;">Acciones</p>
+    
+    <a class="btn-primary" style="width:100%; height:42px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; text-decoration:none;" href="{% url 'registrar' %}?vehiculo_id={{ vehiculo.pk }}">
+        Registrar mantención
+    </a>
+    
+    <a class="btn-secondary" style="width:100%; height:42px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; text-decoration:none;" href="{% url 'historial' %}?vehiculo_id={{ vehiculo.pk }}">
+        Ver historial completo
+    </a>
+    
+    <a class="btn-secondary" style="width:100%; height:42px; display:flex; align-items:center; justify-content:center; border: 1px solid #0f766e; color: #0f766e; text-decoration:none;" href="{% url 'cambiar_estado' vehiculo.id_vehi %}">
+        Marcar como operativo
+    </a>
+</div>
+
       </div>
     </div>
   </div>
