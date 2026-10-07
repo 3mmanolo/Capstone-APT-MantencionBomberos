@@ -94,7 +94,7 @@ fun LoginScreen(
         Spacer(modifier = Modifier.height(6.dp))
 
         Text(
-            text = "Cuerpo de Bomberos de Melipilla",
+            text = "Cuerpo de Bomberos de Talcahuano",
             color = BomberosTextSecondary,
             fontSize = 14.sp,
             textAlign = TextAlign.Center

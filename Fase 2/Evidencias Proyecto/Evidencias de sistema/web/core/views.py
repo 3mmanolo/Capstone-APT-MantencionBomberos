@@ -7,6 +7,9 @@ from django.contrib.auth.models import User
 from django.db.models import Count
 from django.contrib.auth import authenticate, login, logout
 from django.contrib.auth.decorators import login_required
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
+from django.core.validators import validate_email
 from django.utils import timezone
 from .models import Vehiculo, Usuario, Compania, Mantencion, TipoMantencion, Insumo, MantencionInsu
 import json
@@ -50,17 +53,37 @@ def cerrar_sesion(request):
     logout(request)
     return redirect('index')  # Redirige a la página de login
 
+def _datos_usuario_actual(request):
+    """Devuelve (perfil, datos para la plantilla) del usuario en sesion.
+    Tolera cuentas de acceso sin perfil (Usuario) asociado, que de otro modo
+    provocan un error 500 al leer request.user.perfil."""
+    perfil_usuario = getattr(request.user, 'perfil', None)
+    is_admin = request.user.is_superuser or bool(
+        perfil_usuario and (perfil_usuario.rol or '').lower() == 'administrador'
+    )
+
+    if perfil_usuario:
+        nombre = perfil_usuario.nombre
+        rol = perfil_usuario.rol
+        comp = str(perfil_usuario.id_compania) if perfil_usuario.id_compania else 'Sin Compañía'
+    else:
+        nombre = request.user.get_full_name() or request.user.username
+        rol = ''
+        comp = 'Sin Compañía'
+
+    return perfil_usuario, {
+        'name': nombre,
+        'rol': rol,
+        'comp': comp,
+        'initials': ''.join([palabra[0].upper() for palabra in nombre.split()[:2]]) or '??',
+        'isAdmin': is_admin,
+    }
+
+
 @login_required(login_url='index')
 def dashboard(request):
-    perfil = request.user.perfil
-
-    current_user_data = {
-        'name': perfil.nombre,
-        'role': perfil.rol,
-        'comp': str(perfil.id_compania) if perfil.id_compania else 'Sin Compañía',
-        'initials': ''.join([palabra[0].upper() for palabra in perfil.nombre.split()[:2]]),
-        'isAdmin': request.user.is_superuser or perfil.rol.lower() == 'administrador'
-    }
+    perfil, current_user_data = _datos_usuario_actual(request)
+    current_user_data['role'] = current_user_data['rol']
 
     context = {
         'current_user': current_user_data,
@@ -92,17 +115,8 @@ def registrar(request):
     tipos_mantencion = TipoMantencion.objects.all()
     insumos_disponibles = Insumo.objects.all()
 
-    perfil_usuario = request.user.perfil
-    is_admin = request.user.is_superuser or (perfil_usuario.rol or '').lower() == 'administrador'
-
-    current_user_data = {
-        'name': perfil_usuario.nombre,
-        'rol': perfil_usuario.rol,
-        'comp': str(perfil_usuario.id_compania) if perfil_usuario.id_compania else 'Sin Compañía',
-        'initials': ''.join([palabra[0].upper() for palabra in perfil_usuario.nombre.split()[:2]]),
-        'email': request.user.email,
-        'isAdmin': is_admin,
-    }
+    perfil_usuario, current_user_data = _datos_usuario_actual(request)
+    current_user_data['email'] = request.user.email
 
     if request.method == 'POST':
         vehiculo_id = request.POST.get('vehiculo')
@@ -195,18 +209,9 @@ from django.contrib.auth.decorators import login_required
 
 @login_required(login_url='index')
 def perfil(request):
-    perfil_usuario = request.user.perfil
-    is_admin = request.user.is_superuser or (perfil_usuario.rol or '').lower() == 'administrador'
-
-    current_user_data = {
-        'name': perfil_usuario.nombre,
-        'rol': perfil_usuario.rol,
-        'comp': str(perfil_usuario.id_compania) if perfil_usuario.id_compania else 'Sin Compañía',
-        'initials': ''.join([palabra[0].upper() for palabra in perfil_usuario.nombre.split()[:2]]),
-        'email': request.user.email,
-        'telefono': perfil_usuario.telefono,
-        'isAdmin': is_admin,
-    }
+    perfil_usuario, current_user_data = _datos_usuario_actual(request)
+    current_user_data['email'] = request.user.email
+    current_user_data['telefono'] = perfil_usuario.telefono if perfil_usuario else ''
 
     return render(request, 'core/perfil.html', {'current_user': current_user_data})
 
@@ -233,16 +238,8 @@ def _estado_visual_vehiculo(vehiculo, hoy):
 
 @login_required(login_url='index')
 def vehiculos(request):
-    perfil_usuario = request.user.perfil
-    is_admin = request.user.is_superuser or (perfil_usuario.rol or '').lower() == 'administrador'
-
-    current_user_data = {
-        'name': perfil_usuario.nombre,
-        'rol': perfil_usuario.rol,
-        'comp': str(perfil_usuario.id_compania) if perfil_usuario.id_compania else 'Sin Compañía',
-        'initials': ''.join([palabra[0].upper() for palabra in perfil_usuario.nombre.split()[:2]]),
-        'isAdmin': is_admin,
-    }
+    perfil_usuario, current_user_data = _datos_usuario_actual(request)
+    is_admin = current_user_data['isAdmin']
 
     if not is_admin:
         return redirect('dashboard')
@@ -381,11 +378,26 @@ from .models import Usuario
 
 # core/views.py
 
+ROLES_USUARIO = ['Administrador', 'Encargado de flota', 'Voluntario']
+
 @login_required(login_url='index')
 def usuarios(request):
+    is_admin = False
+    if hasattr(request.user, 'perfil') and request.user.perfil:
+        is_admin = request.user.is_superuser or (request.user.perfil.rol and request.user.perfil.rol.lower() == 'administrador')
+    else:
+        is_admin = request.user.is_superuser
+
+    # Solo los administradores pueden ver y modificar las cuentas
+    if not is_admin:
+        return redirect('dashboard')
+
+    errores = []
+    form_data = None
+
     if request.method == 'POST':
         action = request.POST.get('action')
-        
+
         if action == 'delete':
             user_id = request.POST.get('user_id')
             if user_id:
@@ -406,8 +418,43 @@ def usuarios(request):
                 if compania_id:
                     u.id_compania_id = compania_id
                 u.save()
+                return redirect('usuarios')
 
-            return redirect('usuarios')
+            # Alta de un usuario nuevo: cuenta de acceso (auth_user) + perfil
+            nombre = (nombre or '').strip()
+            email = request.POST.get('email', '').strip().lower()
+            password = request.POST.get('password', '')
+            # El nombre de usuario para iniciar sesión es la parte del correo antes de la @
+            username = email.split('@')[0]
+            compania_obj = Compania.objects.filter(pk=compania_id).first() if compania_id else None
+
+            if not nombre:
+                errores.append('Ingresa el nombre completo.')
+            try:
+                validate_email(email)
+            except ValidationError:
+                errores.append('Ingresa un correo válido.')
+            else:
+                if User.objects.filter(email__iexact=email).exists() or User.objects.filter(username__iexact=username).exists():
+                    errores.append('Ya existe un usuario con ese correo.')
+            if rol not in ROLES_USUARIO:
+                errores.append('Selecciona un rol válido.')
+            if compania_id and not compania_obj:
+                errores.append('Selecciona una compañía válida.')
+            try:
+                validate_password(password, user=User(username=username, email=email))
+            except ValidationError:
+                errores.append('La contraseña debe tener al menos 8 caracteres, no ser solo números, '
+                               'no ser una clave común ni parecerse al correo.')
+
+            if not errores:
+                with transaction.atomic():
+                    nuevo = User.objects.create_user(username=username, email=email, password=password)
+                    Usuario.objects.create(user=nuevo, nombre=nombre, rol=rol, id_compania=compania_obj)
+                return redirect('usuarios')
+
+            # Se devuelve lo ingresado (menos la contraseña) para no perderlo
+            form_data = {'name': nombre, 'email': email, 'role': rol, 'comp_id': compania_id or ''}
 
     users_data = []
     for u in Usuario.objects.select_related('id_compania', 'user').all():
@@ -416,15 +463,10 @@ def usuarios(request):
             'name': u.nombre,
             'email': (u.user.email if u.user else '') or 'Sin correo',
             'comp': u.id_compania.nombre if u.id_compania else 'Sin compañía',
+            'comp_id': u.id_compania_id or '',
             'role': u.rol,
             'initials': ''.join([w[0].upper() for w in u.nombre.split()[:2]]) if u.nombre else 'US'
         })
-
-    is_admin = False
-    if hasattr(request.user, 'perfil') and request.user.perfil:
-        is_admin = request.user.is_superuser or (request.user.perfil.rol and request.user.perfil.rol.lower() == 'administrador')
-    else:
-        is_admin = request.user.is_superuser
 
     perfil_usuario = getattr(request.user, 'perfil', None)
     if perfil_usuario:
@@ -449,6 +491,8 @@ def usuarios(request):
         'current_user': current_user_data,
         'current_user_json': {'isAdmin': is_admin},
         'companias': Compania.objects.all(),
+        'errores': errores,
+        'form_data': form_data,
     }
-    
+
     return render(request, 'core/usuarios.html', context)

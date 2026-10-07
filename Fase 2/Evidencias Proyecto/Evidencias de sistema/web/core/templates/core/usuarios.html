@@ -15,7 +15,7 @@
   <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-brand">
-      <div class="logo"><img src="/imagenes/logo2.png" alt="Logo Control de mantención"></div>
+      <div class="logo"><img src="{% static 'imagenes/logo2.png' %}" alt="Logo Control de mantención"></div>
       <div><p class="t1">Control de mantención</p><p class="t2">Bomberos Talcahuano</p></div>
     </div>
     <a class="nav-item" href="{% url 'dashboard' %}"><svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="7" height="7" rx="1.2"/><rect x="13" y="4" width="7" height="7" rx="1.2"/><rect x="4" y="13" width="7" height="7" rx="1.2"/><rect x="13" y="13" width="7" height="7" rx="1.2"/></svg>Dashboard</a>
@@ -48,6 +48,12 @@
     </div>
 
     <div class="content">
+      {% if errores %}
+      <div class="card" style="max-width:640px; margin:0 0 16px; border-color:var(--red); background:var(--amber-bg);">
+        {% for e in errores %}<p style="margin:4px 0; color:var(--red);">{{ e }}</p>{% endfor %}
+      </div>
+      {% endif %}
+
       <!-- Formulario para Agregar / Editar -->
       <form method="POST" action="{% url 'usuarios' %}" class="card" id="form-card" style="display:none; margin-bottom:20px; max-width:640px;">
         {% csrf_token %}
@@ -63,8 +69,14 @@
           </div>
           <div>
             <label>Correo institucional</label>
-            <input type="text" id="f-email" placeholder="nombre.apellido@bomberostalcahuano.cl" disabled>
+            <input type="email" id="f-email" name="email" placeholder="nombre.apellido@bomberostalcahuano.cl">
           </div>
+        </div>
+
+        <!-- La contraseña solo se pide al crear un usuario nuevo -->
+        <div id="f-pass-wrap" style="margin-bottom:16px;">
+          <label>Contraseña</label>
+          <input type="password" id="f-pass" name="password" placeholder="Mínimo 8 caracteres" minlength="8" autocomplete="new-password">
         </div>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
@@ -73,7 +85,7 @@
             <select id="f-comp" name="compania">
               <option value="">Seleccione compañía</option>
               {% for c in companias %}
-                <option value="{{ c.id }}">{{ c.nombre }}</option>
+                <option value="{{ c.id_comp }}">{{ c.nombre }}</option>
               {% endfor %}
             </select>
           </div>
@@ -123,6 +135,7 @@
 </div>
 {{ users_json|json_script:"users-data" }}
 {{ current_user_json|json_script:"current-user-data" }}
+{{ form_data|json_script:"form-data" }}
 
 <script>
   const CURRENT_USER = JSON.parse(document.getElementById('current-user-data').textContent);
@@ -184,18 +197,27 @@ if (!userObj || !userObj.isAdmin) {
 
   function openForm(user) {
     formCard.style.display = 'block';
+    const emailInput = document.getElementById('f-email');
+    const passInput = document.getElementById('f-pass');
+    // El correo y la contraseña solo se definen al crear; al editar no se envían
+    emailInput.disabled = !!user;
+    emailInput.required = !user;
+    passInput.disabled = !!user;
+    passInput.required = !user;
+    passInput.value = '';
+    document.getElementById('f-pass-wrap').style.display = user ? 'none' : 'block';
     if (user) {
       formTitle.textContent = 'Editar usuario';
       document.getElementById('edit-id').value = user.id;
       document.getElementById('f-name').value = user.name;
-      document.getElementById('f-email').value = user.email;
-      document.getElementById('f-comp').value = user.comp;
+      emailInput.value = user.email;
+      document.getElementById('f-comp').value = user.comp_id;
       document.getElementById('f-role').value = user.role;
     } else {
       formTitle.textContent = 'Agregar usuario';
       document.getElementById('edit-id').value = '';
       document.getElementById('f-name').value = '';
-      document.getElementById('f-email').value = '';
+      emailInput.value = '';
       document.getElementById('f-comp').selectedIndex = 0;
       document.getElementById('f-role').selectedIndex = 0;
     }
@@ -235,6 +257,16 @@ if (!userObj || !userObj.isAdmin) {
   document.getElementById('btn-cancelar').addEventListener('click', () => formCard.style.display = 'none');
 
   render();
+
+  // Si el alta fue rechazada, se reabre el formulario con lo que se había ingresado
+  const FORM_DATA = JSON.parse(document.getElementById('form-data').textContent);
+  if (FORM_DATA) {
+    openForm(null);
+    document.getElementById('f-name').value = FORM_DATA.name;
+    document.getElementById('f-email').value = FORM_DATA.email;
+    document.getElementById('f-comp').value = FORM_DATA.comp_id;
+    document.getElementById('f-role').value = FORM_DATA.role;
+  }
 </script>
 
 <script>

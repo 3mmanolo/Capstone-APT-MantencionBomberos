@@ -399,7 +399,7 @@ fun MainDashboardContent(onVehicleClick: (Vehiculo) -> Unit) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Bomberos Melipilla",
+                    text = "Bomberos Talcahuano",
                     color = Color.White.copy(alpha = 0.7f),
                     fontSize = 13.sp
                 )
