@@ -10,6 +10,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -275,6 +276,7 @@ fun DashboardScreen(
                 selectedTab == 0 -> {
                     if (detailedVehicle != null) {
                         VehicleDetailScreen(
+                            realVehicleId = detailedVehicle!!.realId,
                             vehicleId = detailedVehicle!!.id,
                             vehicleName = detailedVehicle!!.nombre,
                             patente = detailedVehicle!!.patente,
@@ -310,17 +312,20 @@ fun DashboardScreen(
     }
 }
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun MainDashboardContent(onVehicleClick: (Vehiculo) -> Unit) {
     val context = LocalContext.current
-    var totalCount by remember { mutableStateOf("5") }
-    var operativosCount by remember { mutableStateOf("2") }
-    var porVencerCount by remember { mutableStateOf("2") }
-    var vencidosCount by remember { mutableStateOf("1") }
+    var totalCount by remember { mutableStateOf("0") }
+    var operativosCount by remember { mutableStateOf("0") }
+    var porVencerCount by remember { mutableStateOf("0") }
+    var vencidosCount by remember { mutableStateOf("0") }
     var flotaList by remember { mutableStateOf<List<Vehiculo>>(emptyList()) }
     var isLoading by remember { mutableStateOf(true) }
+    var refreshTrigger by remember { mutableStateOf(0) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(refreshTrigger) {
+        isLoading = true
         try {
             val response = RetrofitClient.apiService.getDashboard()
             if (response.isSuccessful && response.body()?.success == true) {
@@ -357,14 +362,7 @@ fun MainDashboardContent(onVehicleClick: (Vehiculo) -> Unit) {
                 }
             }
         } catch (e: Exception) {
-            // Usar lista por defecto si la red falla
-            flotaList = listOf(
-                Vehiculo("B-1", 1, "Bomba Melipilla", "HXPL-21", "Compañía 1ª", "Mantención vencida", "Venció hace 6 días", StatusRed),
-                Vehiculo("B-2", 2, "Bomba Los Cerros", "FRWZ-88", "Compañía 2ª", "Vence en 5 días", "Programar mantención", StatusOrange),
-                Vehiculo("R-1", 3, "Rescute Vehicular", "KTLM-05", "Compañía 3ª", "Vence en 4 días", "Programar mantención", StatusOrange),
-                Vehiculo("B-3", 4, "Bomba Centro", "JNPX-47", "Compañía 4ª", "Operativo", "Próxima mantención en 79 días", StatusGreen),
-                Vehiculo("B-4", 5, "Bomba Forestal", "DGRT-63", "Compañía 1ª", "Operativo", "Próxima mantención en 95 días", StatusGreen)
-            )
+            flotaList = emptyList()
         } finally {
             isLoading = false
         }
@@ -399,108 +397,114 @@ fun MainDashboardContent(onVehicleClick: (Vehiculo) -> Unit) {
                     fontWeight = FontWeight.Bold
                 )
                 Text(
-                    text = "Bomberos Talcahuano",
+                    text = "Cuerpo de Bomberos",
                     color = Color.White.copy(alpha = 0.7f),
                     fontSize = 13.sp
                 )
             }
         }
 
-        // Lista e Indicadores
-        LazyColumn(
-            modifier = Modifier.fillMaxSize(),
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        // Lista e Indicadores con Pull-To-Refresh (deslizar hacia abajo)
+        PullToRefreshBox(
+            isRefreshing = isLoading,
+            onRefresh = { refreshTrigger++ },
+            modifier = Modifier.fillMaxSize()
         ) {
-            item {
-                val stats = listOf(
-                    StatItem("Vehículos totales", totalCount, MaterialTheme.colorScheme.onBackground),
-                    StatItem("Operativos", operativosCount, StatusGreen),
-                    StatItem("Por vencer", porVencerCount, StatusOrange),
-                    StatItem("Alertas vencidas", vencidosCount, StatusRed)
-                )
-                
-                Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        StatCard(stats[0], modifier = Modifier.weight(1f))
-                        StatCard(stats[1], modifier = Modifier.weight(1f))
-                    }
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
-                        StatCard(stats[2], modifier = Modifier.weight(1f))
-                        StatCard(stats[3], modifier = Modifier.weight(1f))
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                item {
+                    val stats = listOf(
+                        StatItem("Vehículos totales", totalCount, MaterialTheme.colorScheme.onBackground),
+                        StatItem("Operativos", operativosCount, StatusGreen),
+                        StatItem("Por vencer", porVencerCount, StatusOrange),
+                        StatItem("Alertas vencidas", vencidosCount, StatusRed)
+                    )
+                    
+                    Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            StatCard(stats[0], modifier = Modifier.weight(1f))
+                            StatCard(stats[1], modifier = Modifier.weight(1f))
+                        }
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
+                            StatCard(stats[2], modifier = Modifier.weight(1f))
+                            StatCard(stats[3], modifier = Modifier.weight(1f))
+                        }
                     }
                 }
-            }
 
-            item {
-                Text(
-                    text = "Flota de vehículos",
-                    color = MaterialTheme.colorScheme.onBackground,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold,
-                    modifier = Modifier.padding(top = 8.dp)
-                )
-            }
+                item {
+                    Text(
+                        text = "Flota de vehículos",
+                        color = MaterialTheme.colorScheme.onBackground,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(top = 8.dp)
+                    )
+                }
 
-            items(flotaList) { vehiculo ->
-                Card(
-                    shape = RoundedCornerShape(16.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .clickable { onVehicleClick(vehiculo) }
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth()
+                items(flotaList) { vehiculo ->
+                    Card(
+                        shape = RoundedCornerShape(16.dp),
+                        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .clickable { onVehicleClick(vehiculo) }
                     ) {
-                        Box(
-                            modifier = Modifier
-                                .width(6.dp)
-                                .height(90.dp)
-                                .background(vehiculo.estadoColor, shape = RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp))
-                        )
-                        
                         Row(
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .padding(16.dp),
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically
+                            modifier = Modifier.fillMaxWidth()
                         ) {
-                            Column(modifier = Modifier.weight(1.2f)) {
-                                Text(
-                                    text = "${vehiculo.id} • ${vehiculo.nombre}",
-                                    color = MaterialTheme.colorScheme.onSurface,
-                                    fontSize = 15.sp,
-                                    fontWeight = FontWeight.Bold
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = "Patente ${vehiculo.patente} • ${vehiculo.compania}",
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 12.sp
-                                )
-                            }
+                            Box(
+                                modifier = Modifier
+                                    .width(6.dp)
+                                    .height(90.dp)
+                                    .background(vehiculo.estadoColor, shape = RoundedCornerShape(topStart = 16.dp, bottomStart = 16.dp))
+                            )
                             
-                            Column(
-                                horizontalAlignment = Alignment.End,
-                                modifier = Modifier.weight(1f)
+                            Row(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(16.dp),
+                                horizontalArrangement = Arrangement.SpaceBetween,
+                                verticalAlignment = Alignment.CenterVertically
                             ) {
-                                Text(
-                                    text = vehiculo.estadoText,
-                                    color = vehiculo.estadoColor,
-                                    fontSize = 13.sp,
-                                    fontWeight = FontWeight.SemiBold,
-                                    textAlign = TextAlign.End
-                                )
-                                Spacer(modifier = Modifier.height(4.dp))
-                                Text(
-                                    text = vehiculo.estadoDetalle,
-                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
-                                    fontSize = 11.sp,
-                                    textAlign = TextAlign.End,
-                                    lineHeight = 14.sp
-                                )
+                                Column(modifier = Modifier.weight(1.2f)) {
+                                    Text(
+                                        text = "${vehiculo.id} • ${vehiculo.nombre}",
+                                        color = MaterialTheme.colorScheme.onSurface,
+                                        fontSize = 15.sp,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = "Patente ${vehiculo.patente} • ${vehiculo.compania}",
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 12.sp
+                                    )
+                                }
+                                
+                                Column(
+                                    horizontalAlignment = Alignment.End,
+                                    modifier = Modifier.weight(1f)
+                                ) {
+                                    Text(
+                                        text = vehiculo.estadoText,
+                                        color = vehiculo.estadoColor,
+                                        fontSize = 13.sp,
+                                        fontWeight = FontWeight.SemiBold,
+                                        textAlign = TextAlign.End
+                                    )
+                                    Spacer(modifier = Modifier.height(4.dp))
+                                    Text(
+                                        text = vehiculo.estadoDetalle,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 11.sp,
+                                        textAlign = TextAlign.End,
+                                        lineHeight = 14.sp
+                                    )
+                                }
                             }
                         }
                     }

@@ -110,7 +110,10 @@ def vehidetalle(request, vehiculo_id):
 
 def cambiar_estado(request, id_vehi):
     vehiculo = get_object_or_404(Vehiculo, pk=id_vehi)
+    hoy = timezone.localdate()
     vehiculo.estado = 'operativo'
+    if not vehiculo.proxima_mantencion or vehiculo.proxima_mantencion <= hoy:
+        vehiculo.proxima_mantencion = hoy + timezone.timedelta(days=90)
     vehiculo.save()
     
     # Redirige usando el argumento posicional o vehiculo_id=id_vehi

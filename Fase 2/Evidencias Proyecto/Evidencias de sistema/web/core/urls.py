@@ -43,4 +43,5 @@ urlpatterns = [
     path('api/notificaciones/', api_views.api_notificaciones, name='api_notificaciones'),
     path('api/usuarios/', api_views.api_usuarios, name='api_usuarios'),
     path('api/perfil/', api_views.api_perfil, name='api_perfil'),
+    path('api/vehiculos/<int:vehiculo_id>/operativo/', api_views.api_vehiculo_operativo, name='api_vehiculo_operativo'),
 ]

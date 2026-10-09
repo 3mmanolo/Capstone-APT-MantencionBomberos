@@ -37,8 +37,6 @@ import androidx.compose.ui.unit.sp
 import com.example.app.network.RetrofitClient
 import com.example.app.ui.theme.AppTheme
 import com.example.app.ui.theme.BomberosBackground
-import com.example.app.ui.theme.StatusGreen
-import com.example.app.ui.theme.StatusOrange
 
 data class HistoryItem(
     val id: String,
@@ -72,13 +70,7 @@ fun HistoryScreen(modifier: Modifier = Modifier) {
                 }
             }
         } catch (e: Exception) {
-            historyData = listOf(
-                HistoryItem("B-1", 1, "Bomba Melipilla", "HXPL-21", "Compañía 1ª", 4, StatusGreen),
-                HistoryItem("B-2", 2, "Bomba Los Cerros", "FRWZ-88", "Compañía 2ª", 2, StatusOrange),
-                HistoryItem("R-1", 3, "Rescute Vehicular", "KTLM-05", "Compañía 3ª", 1, StatusOrange),
-                HistoryItem("B-3", 4, "Bomba Centro", "JNPX-47", "Compañía 4ª", 1, StatusGreen),
-                HistoryItem("B-4", 5, "Bomba Forestal", "DGRT-63", "Compañía 1ª", 1, StatusGreen)
-            )
+            historyData = emptyList()
         }
     }
 

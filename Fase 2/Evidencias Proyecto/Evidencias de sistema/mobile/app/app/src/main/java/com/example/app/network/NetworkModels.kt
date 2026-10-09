@@ -174,3 +174,17 @@ data class GenericResponse(
     @SerializedName("message") val message: String?,
     @SerializedName("id") val id: Int? = null
 )
+
+data class PerfilResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("perfil") val perfil: PerfilDto?
+)
+
+data class PerfilDto(
+    @SerializedName("nombre") val nombre: String,
+    @SerializedName("email") val email: String,
+    @SerializedName("rol") val rol: String,
+    @SerializedName("compania") val compania: String,
+    @SerializedName("telefono") val telefono: String,
+    @SerializedName("initials") val initials: String
+)

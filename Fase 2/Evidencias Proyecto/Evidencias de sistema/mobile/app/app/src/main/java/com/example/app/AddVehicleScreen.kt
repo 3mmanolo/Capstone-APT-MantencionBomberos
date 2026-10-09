@@ -24,6 +24,7 @@ import com.example.app.network.RetrofitClient
 import com.example.app.ui.theme.AppTheme
 import com.example.app.ui.theme.BomberosBackground
 import com.example.app.ui.theme.BomberosRed
+import com.example.app.ui.theme.StatusGreen
 import kotlinx.coroutines.launch
 
 @Composable
@@ -36,7 +37,7 @@ fun AddVehicleScreen(onBack: () -> Unit) {
     var selectedCompania by remember { mutableStateOf(companias[0]) }
     var expandedCompania by remember { mutableStateOf(false) }
 
-    val tipos = listOf("Carro Bomba", "Rescate", "Hazmat", "Escala Mecánica", "Agua")
+    val tipos = listOf("Carro bomba", "Rescate", "Hazmat", "Forestal", "Agua")
     var selectedTipo by remember { mutableStateOf(tipos[0]) }
     var expandedTipo by remember { mutableStateOf(false) }
 
@@ -44,10 +45,100 @@ fun AddVehicleScreen(onBack: () -> Unit) {
     var kilometraje by remember { mutableStateOf("") }
     var proximaMantencion by remember { mutableStateOf("") }
 
+    var showConfirmDialog by remember { mutableStateOf(false) }
+    var showSuccessDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
     val coroutineScope = rememberCoroutineScope()
+
+    // Diálogo 1: Confirmación antes de guardar
+    if (showConfirmDialog) {
+        AlertDialog(
+            onDismissRequest = { if (!isLoading) showConfirmDialog = false },
+            title = { Text(text = "Confirmar Guardar Vehículo", fontWeight = FontWeight.Bold) },
+            text = { Text(text = "¿Deseas registrar el vehículo \"$nombre\" (Patente: $patente) en la base de datos?") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        isLoading = true
+                        errorMessage = ""
+                        coroutineScope.launch {
+                            try {
+                                val compIndex = companias.indexOf(selectedCompania) + 1
+                                val km = kilometraje.toDoubleOrNull() ?: 0.0
+                                val request = GuardarVehiculoRequest(
+                                    nombre = nombre,
+                                    patente = patente,
+                                    tipo = selectedTipo,
+                                    anio = anio.ifBlank { "2024" },
+                                    kilometraje = km,
+                                    companiaId = compIndex,
+                                    proximaMantencion = proximaMantencion.ifBlank { null }
+                                )
+                                val response = RetrofitClient.apiService.guardarVehiculo(request)
+                                isLoading = false
+                                if (response.isSuccessful && response.body()?.success == true) {
+                                    showConfirmDialog = false
+                                    showSuccessDialog = true
+                                } else {
+                                    showConfirmDialog = false
+                                    errorMessage = response.body()?.message ?: "Error al guardar vehículo en la base de datos."
+                                }
+                            } catch (e: Exception) {
+                                isLoading = false
+                                showConfirmDialog = false
+                                errorMessage = "Error de conexión: ${e.localizedMessage}"
+                            }
+                        }
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = BomberosRed),
+                    enabled = !isLoading
+                ) {
+                    if (isLoading) {
+                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(20.dp))
+                    } else {
+                        Text("Confirmar", color = Color.White, fontWeight = FontWeight.Bold)
+                    }
+                }
+            },
+            dismissButton = {
+                TextButton(
+                    onClick = { showConfirmDialog = false },
+                    enabled = !isLoading
+                ) {
+                    Text("Cancelar", color = MaterialTheme.colorScheme.onSurface)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // Diálogo 2: Éxito al guardar
+    if (showSuccessDialog) {
+        AlertDialog(
+            onDismissRequest = {
+                showSuccessDialog = false
+                onBack()
+            },
+            title = { Text(text = "Vehículo Guardado", fontWeight = FontWeight.Bold, color = StatusGreen) },
+            text = { Text(text = "El vehículo \"$nombre\" ($patente) ha sido registrado exitosamente en la base de datos.") },
+            confirmButton = {
+                Button(
+                    onClick = {
+                        showSuccessDialog = false
+                        onBack()
+                    },
+                    colors = ButtonDefaults.buttonColors(containerColor = StatusGreen)
+                ) {
+                    Text("Aceptar", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
 
     Column(
         modifier = Modifier
@@ -267,47 +358,18 @@ fun AddVehicleScreen(onBack: () -> Unit) {
                 Button(
                     onClick = {
                         if (nombre.isBlank() || patente.isBlank()) {
-                            errorMessage = "Por favor ingresa nombre y patente."
+                            errorMessage = "Por favor ingresa nombre y patente del vehículo."
                             return@Button
                         }
-                        isLoading = true
                         errorMessage = ""
-                        coroutineScope.launch {
-                            try {
-                                val compIndex = companias.indexOf(selectedCompania) + 1
-                                val km = kilometraje.toDoubleOrNull() ?: 0.0
-                                val request = GuardarVehiculoRequest(
-                                    nombre = nombre,
-                                    patente = patente,
-                                    tipo = selectedTipo,
-                                    anio = anio.ifBlank { "2024" },
-                                    kilometraje = km,
-                                    companiaId = compIndex,
-                                    proximaMantencion = proximaMantencion.ifBlank { null }
-                                )
-                                val response = RetrofitClient.apiService.guardarVehiculo(request)
-                                isLoading = false
-                                if (response.isSuccessful && response.body()?.success == true) {
-                                    onBack()
-                                } else {
-                                    errorMessage = response.body()?.message ?: "Error al guardar vehículo."
-                                }
-                            } catch (e: Exception) {
-                                isLoading = false
-                                errorMessage = "Error de conexión: ${e.localizedMessage}"
-                            }
-                        }
+                        showConfirmDialog = true
                     },
                     modifier = Modifier.weight(1f).height(55.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = BomberosRed, contentColor = Color.White),
                     enabled = !isLoading
                 ) {
-                    if (isLoading) {
-                        CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
-                    } else {
-                        Text(text = "Guardar vehículo", fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                    }
+                    Text(text = "Guardar vehículo", fontSize = 15.sp, fontWeight = FontWeight.Bold)
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))

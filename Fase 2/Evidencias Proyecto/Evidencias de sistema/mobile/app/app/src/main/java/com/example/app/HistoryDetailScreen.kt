@@ -70,11 +70,7 @@ fun HistoryDetailScreen(
                 }
             }
         } catch (e: Exception) {
-            listaMantenciones = listOf(
-                LogMantencion("12 Feb 2025", "Mantención Preventiva", "Juan Pérez", "45.200 km", "Cambio de aceite de motor, filtros de aire y revisión de presión del sistema hidráulico."),
-                LogMantencion("28 Ene 2025", "Reparación de Luces", "Carlos Gómez", "44.800 km", "Se reemplazaron ampolletas LED de balizas frontales y se reparó cableado."),
-                LogMantencion("15 Dic 2024", "Revisión Técnica", "Planta Melipilla", "42.100 km", "Aprobada sin observaciones. Frenos y gases en óptimo estado.")
-            )
+            listaMantenciones = emptyList()
         }
     }
 

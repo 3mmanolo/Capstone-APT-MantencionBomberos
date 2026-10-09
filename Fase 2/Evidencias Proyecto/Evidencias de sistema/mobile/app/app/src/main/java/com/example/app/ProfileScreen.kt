@@ -59,18 +59,25 @@ fun ProfileScreen(
     var alertsEnabled by remember { mutableStateOf(true) }
     var emailRemindersEnabled by remember { mutableStateOf(false) }
 
-    var userName by remember { mutableStateOf("Juan Pérez Soto") }
-    var userEmail by remember { mutableStateOf("juan.perez@bomberosmelipilla.cl") }
-    var userPhone by remember { mutableStateOf("+56 9 1234 5678") }
-    var userRole by remember { mutableStateOf("Administrador") }
-    var userCompany by remember { mutableStateOf("Compañía 1ª") }
-    var userInitials by remember { mutableStateOf("JP") }
+    var userName by remember { mutableStateOf("") }
+    var userEmail by remember { mutableStateOf("") }
+    var userPhone by remember { mutableStateOf("") }
+    var userRole by remember { mutableStateOf("") }
+    var userCompany by remember { mutableStateOf("") }
+    var userInitials by remember { mutableStateOf("") }
 
     LaunchedEffect(Unit) {
         try {
             val response = RetrofitClient.apiService.getPerfil()
             if (response.isSuccessful && response.body()?.success == true) {
-                // Si el servidor retorna el perfil
+                response.body()?.perfil?.let { p ->
+                    userName = p.nombre
+                    userEmail = p.email
+                    userPhone = p.telefono
+                    userRole = p.rol
+                    userCompany = p.compania
+                    userInitials = p.initials
+                }
             }
         } catch (e: Exception) {
             // Silencioso

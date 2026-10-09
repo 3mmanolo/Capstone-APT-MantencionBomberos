@@ -1,5 +1,6 @@
 import json
 import re
+import datetime
 from decimal import Decimal, InvalidOperation
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -20,6 +21,19 @@ def _get_json_body(request):
     except Exception:
         pass
     return {}
+
+def _parse_date_safe(date_str):
+    if not date_str:
+        return timezone.localdate() + timezone.timedelta(days=90)
+    date_str = str(date_str).strip()
+    if not date_str or date_str.lower() in ['dd-mm-aaaa', 'yyyy-mm-dd', 'none', 'null', '']:
+        return timezone.localdate() + timezone.timedelta(days=90)
+    for fmt in ('%Y-%m-%d', '%d-%m-%Y', '%d/%m/%Y', '%Y/%m/%d'):
+        try:
+            return datetime.datetime.strptime(date_str, fmt).date()
+        except ValueError:
+            pass
+    return timezone.localdate() + timezone.timedelta(days=90)
 
 @csrf_exempt
 @require_http_methods(["POST"])
@@ -163,7 +177,16 @@ def api_vehiculos(request):
         if not modelo or not tipo_v:
             return JsonResponse({'success': False, 'message': 'Modelo y Tipo son requeridos.'}, status=400)
 
-        compania_obj = Compania.objects.filter(pk=compania_id).first() if compania_id else None
+        if patente:
+            existing = Vehiculo.objects.filter(patente__iexact=patente)
+            if edit_id:
+                existing = existing.exclude(pk=edit_id)
+            if existing.exists():
+                return JsonResponse({'success': False, 'message': f'La patente {patente} ya está registrada en la base de datos.'}, status=400)
+
+        compania_obj = Compania.objects.filter(pk=compania_id).first() if compania_id else Compania.objects.first()
+        if not compania_obj:
+            compania_obj, _ = Compania.objects.get_or_create(nombre="Compañía 1ª")
 
         if edit_id:
             v_obj = Vehiculo.objects.filter(pk=edit_id).first()
@@ -176,13 +199,18 @@ def api_vehiculos(request):
         v_obj.modelo = modelo
         v_obj.patente = patente or None
         v_obj.tipo_v = tipo_v
+        v_obj.id_compania = compania_obj
+
         if anio:
-            v_obj.anio = int(anio)
+            try:
+                v_obj.anio = int(re.sub(r'[^\d]', '', str(anio)) or '2024')
+            except Exception:
+                v_obj.anio = 2024
+        else:
+            v_obj.anio = 2024
+
         v_obj.kilometraje = Decimal(str(km)) if km else Decimal(0)
-        if compania_obj:
-            v_obj.id_compania = compania_obj
-        if proxima:
-            v_obj.proxima_mantencion = proxima
+        v_obj.proxima_mantencion = _parse_date_safe(proxima)
 
         try:
             v_obj.save()
@@ -410,3 +438,22 @@ def api_perfil(request):
             'initials': ''.join([w[0].upper() for w in nombre.split()[:2]]) if nombre else 'US'
         }
     })
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_vehiculo_operativo(request, vehiculo_id):
+    """POST /api/vehiculos/<id>/operativo/ - Marca el vehículo como operativo."""
+    v_obj = Vehiculo.objects.filter(pk=vehiculo_id).first()
+    if not v_obj:
+        return JsonResponse({'success': False, 'message': 'Vehículo no encontrado.'}, status=404)
+
+    hoy = timezone.localdate()
+    v_obj.estado = 'operativo'
+    # Extender la fecha de próxima mantención a 90 días en el futuro para asegurar estado verde (Operativo)
+    if not v_obj.proxima_mantencion or v_obj.proxima_mantencion <= hoy:
+        v_obj.proxima_mantencion = hoy + timezone.timedelta(days=90)
+
+    v_obj.save()
+    return JsonResponse({'success': True, 'message': 'Marcado como operativo exitosamente.'})
+
+

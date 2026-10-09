@@ -43,5 +43,8 @@ interface ApiService {
     suspend fun guardarUsuario(@Body request: GuardarUsuarioRequest): Response<GenericResponse>
 
     @GET("api/perfil/")
-    suspend fun getPerfil(): Response<GenericResponse>
+    suspend fun getPerfil(): Response<PerfilResponse>
+
+    @POST("api/vehiculos/{id}/operativo/")
+    suspend fun cambiarEstadoOperativo(@Path("id") id: Int): Response<GenericResponse>
 }

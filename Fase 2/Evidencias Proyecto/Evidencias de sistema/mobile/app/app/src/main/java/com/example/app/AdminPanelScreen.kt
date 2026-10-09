@@ -9,6 +9,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
+import androidx.compose.material3.pulltorefresh.PullToRefreshBox
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -21,6 +22,7 @@ import com.example.app.network.RetrofitClient
 import com.example.app.ui.theme.*
 import kotlinx.coroutines.launch
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AdminVehiclesScreen(
     onBack: () -> Unit, 
@@ -28,10 +30,12 @@ fun AdminVehiclesScreen(
     onEditVehicle: (AdminVehicle) -> Unit
 ) {
     var vehicles by remember { mutableStateOf<List<AdminVehicle>>(emptyList()) }
+    var isRefreshing by remember { mutableStateOf(false) }
     val coroutineScope = rememberCoroutineScope()
 
     val fetchVehicles: () -> Unit = {
         coroutineScope.launch {
+            isRefreshing = true
             try {
                 val response = RetrofitClient.apiService.getVehiculos()
                 if (response.isSuccessful && response.body()?.success == true) {
@@ -50,13 +54,9 @@ fun AdminVehiclesScreen(
                     }
                 }
             } catch (e: Exception) {
-                vehicles = listOf(
-                    AdminVehicle("B-1 • Bomba Melipilla", 1, "HXPL-21", "Compañía 1ª", "Carro bomba", "2016", "Mantención vencida", StatusRed),
-                    AdminVehicle("B-2 • Bomba Los Cerros", 2, "FRWZ-88", "Compañía 2ª", "Carro bomba", "2019", "Vence en 5 días", StatusOrange),
-                    AdminVehicle("R-1 • Rescate Vehicular", 3, "KTLM-05", "Compañía 3ª", "Rescate", "2021", "Vence en 4 días", StatusOrange),
-                    AdminVehicle("B-3 • Bomba Centro", 4, "JNPX-47", "Compañía 4ª", "Carro bomba", "2022", "Operativo", StatusGreen),
-                    AdminVehicle("B-4 • Bomba Forestal", 5, "DGRT-63", "Compañía 1ª", "Forestal", "2020", "Operativo", StatusGreen)
-                )
+                vehicles = emptyList()
+            } finally {
+                isRefreshing = false
             }
         }
     }
@@ -122,30 +122,36 @@ fun AdminVehiclesScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        LazyColumn(
-            contentPadding = PaddingValues(16.dp),
-            verticalArrangement = Arrangement.spacedBy(16.dp)
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { fetchVehicles() },
+            modifier = Modifier.fillMaxSize()
         ) {
-            items(vehicles) { vehicle ->
-                AdminCardUI(
-                    title = vehicle.name,
-                    subtitle = "Patente ${vehicle.patente} · ${vehicle.compania}",
-                    extra = "${vehicle.tipo} · Año ${vehicle.anio}",
-                    badgeText = vehicle.estado,
-                    badgeColor = vehicle.color,
-                    initials = vehicle.name.take(1),
-                    onEdit = { onEditVehicle(vehicle) },
-                    onDelete = {
-                        coroutineScope.launch {
-                            try {
-                                RetrofitClient.apiService.eliminarVehiculo(vehicle.realId)
-                                fetchVehicles()
-                            } catch (e: Exception) {
-                                // Silencioso
+            LazyColumn(
+                contentPadding = PaddingValues(16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp)
+            ) {
+                items(vehicles) { vehicle ->
+                    AdminCardUI(
+                        title = vehicle.name,
+                        subtitle = "Patente ${vehicle.patente} · ${vehicle.compania}",
+                        extra = "${vehicle.tipo} · Año ${vehicle.anio}",
+                        badgeText = vehicle.estado,
+                        badgeColor = vehicle.color,
+                        initials = vehicle.name.take(1),
+                        onEdit = { onEditVehicle(vehicle) },
+                        onDelete = {
+                            coroutineScope.launch {
+                                try {
+                                    RetrofitClient.apiService.eliminarVehiculo(vehicle.realId)
+                                    fetchVehicles()
+                                } catch (e: Exception) {
+                                    // Silencioso
+                                }
                             }
                         }
-                    }
-                )
+                    )
+                }
             }
         }
     }
@@ -172,11 +178,7 @@ fun AdminUsersScreen(onBack: () -> Unit, onAddUser: () -> Unit, onEditUser: (Adm
                 }
             }
         } catch (e: Exception) {
-            users = listOf(
-                AdminUser("JP", 1, "Juan Pérez Soto", "juan.perez@bomberosmelipilla.cl", "Compañía 1ª", "Administrador", StatusRed),
-                AdminUser("CR", 2, "Camila Rojas Vega", "camila.rojas@bomberosmelipilla.cl", "Compañía 2ª", "Encargado de flota", StatusOrange),
-                AdminUser("PS", 3, "Pedro Soto Álvarez", "pedro.soto@bomberosmelipilla.cl", "Compañía 3ª", "Voluntario", StatusGreen)
-            )
+            users = emptyList()
         }
     }
 

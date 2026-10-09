@@ -8,8 +8,8 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    // IP local de tu PC en la Wi-Fi (para probar desde el celular físico):
-    const val BASE_URL = "http://10.81.93.203:8000/"
+    // IP local actual de tu PC en la red Wi-Fi:
+    const val BASE_URL = "http://10.68.151.203:8000/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
