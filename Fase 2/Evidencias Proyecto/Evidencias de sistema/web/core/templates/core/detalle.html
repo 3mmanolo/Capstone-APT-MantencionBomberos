@@ -76,9 +76,9 @@
           <h3 style="font-size:15px; margin:0 0 12px;">Últimas mantenciones</h3>
           {% for m in mantenciones %}
             <div class="card" style="margin-bottom:10px;">
-              <p style="font-size:13px; font-weight:700; margin:0 0 3px;">{{ m.titulo }}</p>
+              <p style="font-size:13px; font-weight:700; margin:0 0 3px;">{{ m.descripcion }}</p>
               <p style="font-size:12px; color:var(--text2); margin:0;">
-                {{ m.tipo }} · {{ m.taller }} · {{ m.fecha|date:"d M Y" }}
+                {{ m.id_tipo }} · {{ m.fecha_in|date:"d M Y" }} · {{ m.estado }}
               </p>
             </div>
           {% empty %}

@@ -372,10 +372,16 @@ def historial(request):
 
 @login_required(login_url='index')
 def detalle(request, vehiculo_id):
+    # 1. Obtener datos del usuario actual igual que en el dashboard
+    perfil, current_user_data = _datos_usuario_actual(request)
+    current_user_data['role'] = current_user_data['rol']
+
+    # 2. Obtener datos del vehículo y mantenciones
     vehiculo = get_object_or_404(Vehiculo, pk=vehiculo_id)
     mantenciones = Mantencion.objects.filter(id_vehi=vehiculo)
-    
+
     context = {
+        'current_user': current_user_data,  # <-- verifica si es admin el user
         'vehiculo': vehiculo,
         'mantenciones': mantenciones,
     }
