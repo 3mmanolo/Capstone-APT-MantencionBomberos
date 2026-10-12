@@ -1,0 +1,58 @@
+<mxfile host="app.diagrams.net">
+  <diagram name="Página-1" id="IZ1jkZJyaNhT6vcUSXK0">
+    <mxGraphModel dx="1465" dy="378" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="o4wl41Cs4IEWnm0kMljc-1" parent="1" style="rounded=1;whiteSpace=wrap;html=1;" value="" vertex="1">
+          <mxGeometry height="610" width="1008" x="-778" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="o4wl41Cs4IEWnm0kMljc-3" parent="1" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;align=center;" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Modelo de vista 4 + 1&lt;/h1&gt;&lt;p&gt;Sistema de Control y Seguimiento de Mantención de Vehículos de Emergencia&lt;/p&gt;" vertex="1">
+          <mxGeometry height="90" width="540" x="-550" y="70" as="geometry" />
+        </mxCell>
+        <mxCell id="o4wl41Cs4IEWnm0kMljc-4" parent="1" style="ellipse;whiteSpace=wrap;html=1;shapeInside=1;aspect=fixed;fillColor=#f5f5f5;fontColor=#333333;strokeColor=#666666;" value="" vertex="1">
+          <mxGeometry height="230" width="230" x="-387" y="225" as="geometry" />
+        </mxCell>
+        <mxCell id="o4wl41Cs4IEWnm0kMljc-5" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#dae8fc;strokeColor=#6c8ebf;" value="" vertex="1">
+          <mxGeometry height="145" width="290" x="-703" y="165" as="geometry" />
+        </mxCell>
+        <mxCell id="o4wl41Cs4IEWnm0kMljc-6" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#d5e8d4;strokeColor=#82b366;" value="" vertex="1">
+          <mxGeometry height="150" width="303" x="-703" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="o4wl41Cs4IEWnm0kMljc-7" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#ffe6cc;strokeColor=#d79b00;" value="" vertex="1">
+          <mxGeometry height="150" width="290" x="-140" y="390" as="geometry" />
+        </mxCell>
+        <mxCell id="o4wl41Cs4IEWnm0kMljc-8" parent="1" style="rounded=0;whiteSpace=wrap;html=1;fillColor=#fff2cc;strokeColor=#d6b656;" value="" vertex="1">
+          <mxGeometry height="155" width="290" x="-140" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="o4wl41Cs4IEWnm0kMljc-9" parent="1" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Vista Lógica&lt;/h1&gt;&lt;p&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Clases de dominio: Vehiculo, Mantención, T_mantencion, Insumo, Notificación, Compañía, Usuario.&lt;/li&gt;&lt;li&gt;Atributos y relaciones entre entidades&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;&lt;/p&gt;" vertex="1">
+          <mxGeometry height="120" width="260" x="-695.5" y="177.5" as="geometry" />
+        </mxCell>
+        <mxCell id="5_FFKqOMopWqHzIy7kGj-1" parent="1" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Vista de desarrollo&lt;/h1&gt;&lt;p&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Apps Django: Vehiculos, Mantenciones, Insumos, Notificaciones.&lt;/li&gt;&lt;li&gt;Frontend web y app móvil (clientes de la API)&lt;/li&gt;&lt;li&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt;Repositorio GitHub para control de versión de equipo&lt;/span&gt;.&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;&lt;/p&gt;" vertex="1">
+          <mxGeometry height="130" width="290" x="-695.5" y="400" as="geometry" />
+        </mxCell>
+        <mxCell id="5_FFKqOMopWqHzIy7kGj-2" parent="1" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Vista de Proceso&lt;/h1&gt;&lt;p&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Flujo de registro de una mantención (falla -&amp;gt; en proceso -&amp;gt; realizada)&lt;/li&gt;&lt;li&gt;Envio de notificaciones de mantención próxima o vencida&lt;/li&gt;&lt;li&gt;&lt;span style=&quot;background-color: transparent;&quot;&gt;Acceso congruente de bomberos y encargados de flota&lt;/span&gt;&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;&lt;/p&gt;" vertex="1">
+          <mxGeometry height="145" width="260" x="-120" y="165" as="geometry" />
+        </mxCell>
+        <mxCell id="5_FFKqOMopWqHzIy7kGj-3" parent="1" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Vista Física&lt;/h1&gt;&lt;p&gt;&lt;/p&gt;&lt;ul&gt;&lt;li&gt;Contenedores Docker: aplicación + base&amp;nbsp; de datos&lt;/li&gt;&lt;li&gt;Despliegue en servidor / nube accesible desde los cuarteles&lt;/li&gt;&lt;li&gt;Clientes: navegador web y app móvil en terreno&lt;/li&gt;&lt;/ul&gt;&lt;p&gt;&lt;/p&gt;" vertex="1">
+          <mxGeometry height="145" width="270" x="-130" y="392.5" as="geometry" />
+        </mxCell>
+        <mxCell id="5_FFKqOMopWqHzIy7kGj-5" edge="1" parent="1" source="5_FFKqOMopWqHzIy7kGj-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=1;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="o4wl41Cs4IEWnm0kMljc-6">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="5_FFKqOMopWqHzIy7kGj-6" edge="1" parent="1" source="5_FFKqOMopWqHzIy7kGj-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=0;exitY=0;exitDx=0;exitDy=0;entryX=1;entryY=0.5;entryDx=0;entryDy=0;" target="o4wl41Cs4IEWnm0kMljc-5">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="5_FFKqOMopWqHzIy7kGj-7" edge="1" parent="1" source="5_FFKqOMopWqHzIy7kGj-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="o4wl41Cs4IEWnm0kMljc-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="5_FFKqOMopWqHzIy7kGj-8" edge="1" parent="1" source="5_FFKqOMopWqHzIy7kGj-4" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=1;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="o4wl41Cs4IEWnm0kMljc-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="5_FFKqOMopWqHzIy7kGj-4" parent="1" style="text;html=1;whiteSpace=wrap;overflow=hidden;rounded=0;align=center;" value="&lt;h1 style=&quot;margin-top: 0px;&quot;&gt;Escenarios&lt;/h1&gt;&lt;p&gt;(Casos de uso)&lt;/p&gt;&lt;p&gt;Consultar estado del vehículo antes de salir a una emergencia. Registrar una mantención. Recibir notificación de mantención pendiente&lt;/p&gt;" vertex="1">
+          <mxGeometry height="145" width="176" x="-360" y="267.5" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

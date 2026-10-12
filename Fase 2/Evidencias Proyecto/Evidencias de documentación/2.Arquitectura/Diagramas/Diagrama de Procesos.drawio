@@ -1,0 +1,43 @@
+<mxfile host="Electron">
+  <diagram name="Página-1" id="OE9nv5-CbvAneDtC8-uj">
+    <mxGraphModel dx="774" dy="516" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="827" pageHeight="1169" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="4F9hg7oX_j1yUgonAi5y-1" parent="1" style="swimlane;childLayout=stackLayout;resizeParent=1;resizeParentMax=0;startSize=20;html=1;" value="FireFleet" vertex="1">
+          <mxGeometry height="480" width="610" x="150" y="30" as="geometry" />
+        </mxCell>
+        <mxCell id="4F9hg7oX_j1yUgonAi5y-2" parent="4F9hg7oX_j1yUgonAi5y-1" style="swimlane;startSize=20;html=1;" value="&lt;font&gt;Bombero Chofer (App Móvil)&lt;/font&gt;" vertex="1">
+          <mxGeometry height="460" width="180" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="4F9hg7oX_j1yUgonAi5y-5" parent="4F9hg7oX_j1yUgonAi5y-2" style="rounded=1;whiteSpace=wrap;html=1;" value="Consulta disponibilidad del vehículo" vertex="1">
+          <mxGeometry height="60" width="120" x="30" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="4F9hg7oX_j1yUgonAi5y-3" parent="4F9hg7oX_j1yUgonAi5y-1" style="swimlane;startSize=20;html=1;" value="Encargado de Flota (App Web)" vertex="1">
+          <mxGeometry height="460" width="190" x="180" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="4F9hg7oX_j1yUgonAi5y-6" parent="4F9hg7oX_j1yUgonAi5y-3" style="rounded=1;whiteSpace=wrap;html=1;" value="Registra mantención del vehículo" vertex="1">
+          <mxGeometry height="60" width="120" x="35" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="4F9hg7oX_j1yUgonAi5y-4" parent="4F9hg7oX_j1yUgonAi5y-1" style="swimlane;startSize=20;html=1;" value="Servidor Django / Base de Datos SQLite" vertex="1">
+          <mxGeometry height="460" width="240" x="370" y="20" as="geometry" />
+        </mxCell>
+        <mxCell id="4F9hg7oX_j1yUgonAi5y-7" parent="4F9hg7oX_j1yUgonAi5y-4" style="rounded=1;whiteSpace=wrap;html=1;" value="Lee estado del vehículo &lt;em&gt;(sin bloqueo)&lt;/em&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="60" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="4F9hg7oX_j1yUgonAi5y-8" parent="4F9hg7oX_j1yUgonAi5y-4" style="rounded=1;whiteSpace=wrap;html=1;" value="Escribe nueva mantención &lt;em&gt;(bloqueo exclusivo del archivo .sqlite3)&lt;/em&gt;" vertex="1">
+          <mxGeometry height="60" width="120" x="60" y="190" as="geometry" />
+        </mxCell>
+        <mxCell id="4F9hg7oX_j1yUgonAi5y-9" parent="4F9hg7oX_j1yUgonAi5y-4" style="shape=note;size=20;whiteSpace=wrap;html=1;" value="&lt;font style=&quot;font-size: 9px;&quot;&gt;Si ambas acciones llegan al mismo tiempo, la escritura bloquea momentáneamente las lecturas hasta confirmar el cambio&lt;/font&gt;" vertex="1">
+          <mxGeometry height="120" width="130" x="40" y="310" as="geometry" />
+        </mxCell>
+        <mxCell id="4F9hg7oX_j1yUgonAi5y-14" edge="1" parent="4F9hg7oX_j1yUgonAi5y-1" source="4F9hg7oX_j1yUgonAi5y-5" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;entryX=0;entryY=0.5;entryDx=0;entryDy=0;" target="4F9hg7oX_j1yUgonAi5y-7">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="4F9hg7oX_j1yUgonAi5y-15" edge="1" parent="4F9hg7oX_j1yUgonAi5y-1" source="4F9hg7oX_j1yUgonAi5y-6" style="edgeStyle=orthogonalEdgeStyle;rounded=0;orthogonalLoop=1;jettySize=auto;html=1;exitX=1;exitY=0.5;exitDx=0;exitDy=0;" target="4F9hg7oX_j1yUgonAi5y-8">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>

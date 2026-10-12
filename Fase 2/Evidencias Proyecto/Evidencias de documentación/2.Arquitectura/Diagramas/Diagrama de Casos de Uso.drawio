@@ -1,0 +1,91 @@
+<mxfile host="Electron">
+  <diagram name="Casos de Uso" id="cu">
+    <mxGraphModel dx="1290" dy="860" grid="1" gridSize="10" guides="1" tooltips="1" connect="1" arrows="1" fold="1" page="1" pageScale="1" pageWidth="900" pageHeight="880" math="0" shadow="0">
+      <root>
+        <mxCell id="0" />
+        <mxCell id="1" parent="0" />
+        <mxCell id="e106" edge="1" parent="1" source="enc" style="endArrow=none;html=1;rounded=0;" target="cu03" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e105" edge="1" parent="1" source="enc" style="endArrow=none;html=1;rounded=0;" target="cu02" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="title" parent="1" style="text;html=1;align=center;verticalAlign=middle;fontSize=20;fontStyle=1;" value="Diagrama de Casos de Uso" vertex="1">
+          <mxGeometry height="30" width="400" x="250" as="geometry" />
+        </mxCell>
+        <mxCell id="sys" parent="1" style="rounded=0;whiteSpace=wrap;html=1;verticalAlign=top;fontStyle=1;fillColor=none;spacingTop=6;" value="FireFleet: Sistema de Control y Seguimiento de Mantención de Vehículos" vertex="1">
+          <mxGeometry height="800" width="440" x="230" y="50" as="geometry" />
+        </mxCell>
+        <mxCell id="chofer" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;whiteSpace=wrap;" value="Bombero Chofer&lt;br&gt;(rol Voluntario)" vertex="1">
+          <mxGeometry height="60" width="30" x="80" y="160" as="geometry" />
+        </mxCell>
+        <mxCell id="enc" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;whiteSpace=wrap;" value="Bombero Encargado de Flota&lt;br&gt;(rol Encargado de flota)" vertex="1">
+          <mxGeometry height="60" width="30" x="80" y="520" as="geometry" />
+        </mxCell>
+        <mxCell id="adm" parent="1" style="shape=umlActor;verticalLabelPosition=bottom;verticalAlign=top;html=1;outlineConnect=0;whiteSpace=wrap;" value="Administrador" vertex="1">
+          <mxGeometry height="60" width="30" x="780" y="360" as="geometry" />
+        </mxCell>
+        <mxCell id="cu02" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="CU-02 Ver historial de mantenciones" vertex="1">
+          <mxGeometry height="50" width="230" x="340" y="110" as="geometry" />
+        </mxCell>
+        <mxCell id="cu03" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="CU-03 Ver disponibilidad de carro" vertex="1">
+          <mxGeometry height="50" width="230" x="340" y="185" as="geometry" />
+        </mxCell>
+        <mxCell id="cu01" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="CU-01 Iniciar sesión" vertex="1">
+          <mxGeometry height="50" width="230" x="340" y="290" as="geometry" />
+        </mxCell>
+        <mxCell id="cu09" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="CU-09 Gestionar usuarios" vertex="1">
+          <mxGeometry height="50" width="230" x="340" y="375" as="geometry" />
+        </mxCell>
+        <mxCell id="cu06" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="CU-06 Registrar vehículo" vertex="1">
+          <mxGeometry height="50" width="230" x="340" y="455" as="geometry" />
+        </mxCell>
+        <mxCell id="cu07" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="CU-07 Editar disponibilidad de vehículo" vertex="1">
+          <mxGeometry height="50" width="230" x="340" y="525" as="geometry" />
+        </mxCell>
+        <mxCell id="cu04" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="CU-04 Registrar mantención" vertex="1">
+          <mxGeometry height="50" width="230" x="340" y="670" as="geometry" />
+        </mxCell>
+        <mxCell id="cu05" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="CU-05 Añadir repuestos (insumos)" vertex="1">
+          <mxGeometry height="50" width="200" x="360" y="765" as="geometry" />
+        </mxCell>
+        <mxCell id="cu08" parent="1" style="ellipse;whiteSpace=wrap;html=1;" value="CU-08 Consultar presupuesto de repuestos" vertex="1">
+          <mxGeometry height="50" width="230" x="340" y="595" as="geometry" />
+        </mxCell>
+        <mxCell id="e101" edge="1" parent="1" source="chofer" style="endArrow=none;html=1;rounded=0;" target="cu01" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e102" edge="1" parent="1" source="chofer" style="endArrow=none;html=1;rounded=0;" target="cu02" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e103" edge="1" parent="1" source="chofer" style="endArrow=none;html=1;rounded=0;" target="cu03" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e104" edge="1" parent="1" source="enc" style="endArrow=none;html=1;rounded=0;" target="cu01" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e107" edge="1" parent="1" source="enc" style="endArrow=none;html=1;rounded=0;" target="cu04" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e108" edge="1" parent="1" source="enc" style="endArrow=none;html=1;rounded=0;" target="cu06" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e109" edge="1" parent="1" source="enc" style="endArrow=none;html=1;rounded=0;" target="cu07" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e110" edge="1" parent="1" source="enc" style="endArrow=none;html=1;rounded=0;" target="cu08" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e111" edge="1" parent="1" source="adm" style="endArrow=none;html=1;rounded=0;" target="cu01" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e112" edge="1" parent="1" source="adm" style="endArrow=none;html=1;rounded=0;" target="cu09" value="">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+        <mxCell id="e113" edge="1" parent="1" source="cu05" style="endArrow=open;endFill=0;dashed=1;html=1;rounded=0;" target="cu04" value="«extend»">
+          <mxGeometry relative="1" as="geometry" />
+        </mxCell>
+      </root>
+    </mxGraphModel>
+  </diagram>
+</mxfile>
