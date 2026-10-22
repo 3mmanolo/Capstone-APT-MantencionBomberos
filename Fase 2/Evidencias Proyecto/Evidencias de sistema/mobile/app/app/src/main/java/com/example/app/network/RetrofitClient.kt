@@ -9,7 +9,7 @@ import java.util.concurrent.TimeUnit
 object RetrofitClient {
 
     // IP local actual de tu PC en la red Wi-Fi:
-    const val BASE_URL = "http://10.68.151.203:8000/"
+    const val BASE_URL = "http://10.112.37.203:8000/"
 
     private val loggingInterceptor = HttpLoggingInterceptor().apply {
         level = HttpLoggingInterceptor.Level.BODY
