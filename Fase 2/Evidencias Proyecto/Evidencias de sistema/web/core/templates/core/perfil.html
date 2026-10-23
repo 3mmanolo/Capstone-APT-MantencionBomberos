@@ -8,7 +8,42 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
 <link rel="icon" type="image/png" href="{% static 'imagenes/logo.png' %}">
 <link rel="stylesheet" href="{% static 'styles.css' %}">
+<style>/* Estilos globales para el modo oscuro */
+body.dark-mode {
+    background-color: #121212 !important;
+    color: #e0e0e0 !important;
+}
 
+/* Tarjetas, contenedores y barras laterales */
+body.dark-mode .card, 
+body.dark-mode .sidebar, 
+body.dark-mode .layout,
+body.dark-mode .topbar,
+body.dark-mode .table {
+    background-color: #1e1e1e !important;
+    color: #e0e0e0 !important;
+    border-color: #333 !important;
+}
+
+/* Textos y etiquetas */
+body.dark-mode p, 
+body.dark-mode span, 
+body.dark-mode h1, 
+body.dark-mode h2, 
+body.dark-mode h3, 
+body.dark-mode h4,
+body.dark-mode label {
+    color: #e0e0e0 !important;
+}
+
+/* Campos de formulario */
+body.dark-mode input, 
+body.dark-mode select, 
+body.dark-mode textarea {
+    background-color: #2d2d2d !important;
+    color: #fff !important;
+    border-color: #444 !important;
+}</style>
 </head>
 <body>
 
@@ -66,6 +101,24 @@
             <span>Recordatorios por correo</span>
             <div style="width:38px; height:22px; border-radius:20px; background:#D8D6CE; position:relative;"><div style="width:16px; height:16px; border-radius:50%; background:#fff; position:absolute; top:3px; left:3px;"></div></div>
           </div>
+
+          <div class="dark-mode-setting" style="display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; background: var(--card-bg, #fff); border-radius: 8px; margin-bottom: 15px;">
+    <span style="font-weight: 500;">Modo Oscuro</span>
+    <!-- Estilo del Switch Deslizable -->
+    <label class="switch" style="position: relative; display: inline-block; width: 50px; height: 26px;">
+      <input type="checkbox" id="darkModeToggle" style="opacity: 0; width: 0; height: 0;">
+      <span class="slider" style="position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: #ccc; transition: .4s; border-radius: 34px;"></span>
+    </label>
+</div>
+
+<style>
+  /* Estilos visuales del switch */
+  .slider:before {
+    position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%;
+  }
+  input:checked + .slider { background-color: #2196F3; }
+  input:checked + .slider:before { transform: translateX(24px); }
+</style>
         </div>
 
         <div style="display:flex; gap:10px;">
@@ -100,6 +153,30 @@
       sidebar.querySelectorAll("a").forEach(a => a.addEventListener("click", closeMenu));
     }
   })();
+
+
+  document.addEventListener("DOMContentLoaded", function() {
+    const toggleSwitch = document.querySelector('#darkModeToggle');
+    
+    // 1. Al cargar la página, verificamos si el modo oscuro estaba activo en localStorage
+    if (localStorage.getItem('darkMode') === 'enabled') {
+        document.body.classList.add('dark-mode');
+        if (toggleSwitch) toggleSwitch.checked = true;
+    }
+
+    // 2. Si estamos en la página de perfil, escuchamos cuando el usuario mueva el switch
+    if (toggleSwitch) {
+        toggleSwitch.addEventListener('change', function(e) {
+            if (e.target.checked) {
+                document.body.classList.add('dark-mode');
+                localStorage.setItem('darkMode', 'enabled');
+            } else {
+                document.body.classList.remove('dark-mode');
+                localStorage.setItem('darkMode', 'disabled');
+            }
+        });
+    }
+  });
 </script>
 
 </body>

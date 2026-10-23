@@ -8,6 +8,31 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
 <link rel="icon" type="image/png" href="{% static 'imagenes/logo.png' %}">
 <link rel="stylesheet" href="{% static 'styles.css' %}">
+<style>
+  /* Estilos forzados para el modo oscuro */
+  body.dark-mode {
+      background-color: #121212 !important;
+      color: #e0e0e0 !important;
+  }
+  body.dark-mode .card, 
+  body.dark-mode .sidebar, 
+  body.dark-mode .layout,
+  body.dark-mode .topbar,
+  body.dark-mode .table {
+      background-color: #1e1e1e !important;
+      color: #e0e0e0 !important;
+      border-color: #333 !important;
+  }
+  body.dark-mode p, 
+  body.dark-mode span, 
+  body.dark-mode h1, 
+  body.dark-mode h2, 
+  body.dark-mode h3, 
+  body.dark-mode h4,
+  body.dark-mode label {
+      color: #e0e0e0 !important;
+  }
+</style>
 </head>
 <body>
 
@@ -81,7 +106,7 @@
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
           <div><label>Año</label><input type="text" name="anio" id="f-anio" placeholder="Ej: 2023"></div>
-          <div><label>Kilometraje</label><input type="text" name="kilometraje" id="f-km" placeholder="Ej: 0"></div>
+          <div><label>Kilometraje</label><input type="text" name="kilometraje" id="f-km" min="0" placeholder="Ej: 0"></div>
         </div>
 
         <label>Próxima mantención programada</label>
@@ -196,6 +221,10 @@
       sidebar.querySelectorAll("a").forEach(a => a.addEventListener("click", closeMenu));
     }
   })();
+
+  // Aplica el modo oscuro guardado al cargar cualquier página
+  if (localStorage.getItem('darkMode') === 'enabled') {
+      document.body.classList.add('dark-mode');}
 </script>
 
 </body>

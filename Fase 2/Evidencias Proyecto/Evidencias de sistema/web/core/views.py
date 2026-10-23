@@ -11,6 +11,7 @@ from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
 from django.utils import timezone
+from django.contrib import messages 
 from .models import Vehiculo, Usuario, Compania, Mantencion, TipoMantencion, Insumo, MantencionInsu
 import json
 from django.utils.safestring import mark_safe
@@ -109,6 +110,13 @@ def vehidetalle(request, vehiculo_id):
 
 
 def cambiar_estado(request, id_vehi):
+    perfil_usuario, current_user_data = _datos_usuario_actual(request)
+    
+    # 🔒 Bloquear si es chofer
+    if (current_user_data.get('rol') or '').lower() == 'chofer':
+        messages.error(request, "No tienes permisos para realizar esta acción.")
+        return redirect('dashboard')
+
     vehiculo = get_object_or_404(Vehiculo, pk=id_vehi)
     hoy = timezone.localdate()
     vehiculo.estado = 'operativo'
@@ -128,6 +136,11 @@ def registrar(request):
 
     perfil_usuario, current_user_data = _datos_usuario_actual(request)
     current_user_data['email'] = request.user.email
+
+    # 🔒 Bloquear si el rol es chofer e intenta enviar datos (POST)
+    if (current_user_data.get('rol') or '').lower() == 'chofer':
+        messages.error(request, "No tienes permisos para realizar esta acción.")
+        return redirect('dashboard') # O redirigir con un mensaje de error
 
     if request.method == 'POST':
         vehiculo_id = request.POST.get('vehiculo')
@@ -290,6 +303,10 @@ def vehiculos(request):
             except ValueError:
                 kilometraje = 0
 
+            # 🔒 Validación: El kilometraje no puede ser negativo
+            if kilometraje < 0:
+                errores.append('El kilometraje no puede ser menor a 0.')
+
             if not errores:
                 vehiculo_obj = get_object_or_404(Vehiculo, pk=edit_id) if edit_id else Vehiculo()
                 vehiculo_obj.patente = patente or None
@@ -395,7 +412,7 @@ from .models import Usuario
 
 # core/views.py
 
-ROLES_USUARIO = ['Administrador', 'Encargado de flota', 'Voluntario']
+ROLES_USUARIO = ['Administrador', 'Encargado de flota', 'Voluntario', 'Chofer']
 
 @login_required(login_url='index')
 def usuarios(request):
@@ -447,6 +464,8 @@ def usuarios(request):
 
             if not nombre:
                 errores.append('Ingresa el nombre completo.')
+            elif nombre.isdigit():
+                errores.append('El nombre no puede contener solo números.')
             try:
                 validate_email(email)
             except ValidationError:

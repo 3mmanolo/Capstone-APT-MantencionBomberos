@@ -8,6 +8,31 @@
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
 <link rel="icon" type="image/png" href="{% static 'imagenes/logo.png' %}">
 <link rel="stylesheet" href="{% static 'styles.css' %}">
+<style>
+  /* Estilos forzados para el modo oscuro */
+  body.dark-mode {
+      background-color: #121212 !important;
+      color: #e0e0e0 !important;
+  }
+  body.dark-mode .card, 
+  body.dark-mode .sidebar, 
+  body.dark-mode .layout,
+  body.dark-mode .topbar,
+  body.dark-mode .table {
+      background-color: #1e1e1e !important;
+      color: #e0e0e0 !important;
+      border-color: #333 !important;
+  }
+  body.dark-mode p, 
+  body.dark-mode span, 
+  body.dark-mode h1, 
+  body.dark-mode h2, 
+  body.dark-mode h3, 
+  body.dark-mode h4,
+  body.dark-mode label {
+      color: #e0e0e0 !important;
+  }
+</style>
 </head>
 <body>
 
@@ -108,6 +133,12 @@
   if (CURRENT_USER.isAdmin) {
     document.querySelectorAll(".nav-usuarios, .nav-vehiculos").forEach(el => el.style.display = "flex");
   }
+
+  if (CURRENT_USER.rol === 'chofer') {
+    document.querySelectorAll(".btn-agregar, .btn-editar, .btn-eliminar, .btn-crear").forEach(el => {
+        el.style.display = "none"; // O el.remove() para eliminarlos del DOM
+    });
+}
 </script>
 
 <script>
@@ -125,7 +156,25 @@
       sidebar.querySelectorAll("a").forEach(a => a.addEventListener("click", closeMenu));
     }
   })();
+  // Aplica el modo oscuro guardado al cargar cualquier página
+  if (localStorage.getItem('darkMode') === 'enabled') {
+      document.body.classList.add('dark-mode');
+  }
 </script>
 
+
+
 </body>
+
+<!-- Contenedor de Alertas / Pop-ups de Django -->
+{% if messages %}
+  <div class="messages-container" style="position: fixed; top: 20px; right: 20px; z-index: 9999; max-width: 400px;">
+      {% for message in messages %}
+          <div class="alert alert-danger shadow-lg" style="background-color: #f8d7da; color: #721c24; padding: 15px 20px; border-radius: 8px; border: 1px solid #f5c6cb; display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; font-family: sans-serif;">
+              <span>{{ message }}</span>
+              <button type="button" onclick="this.parentElement.style.display='none';" style="background: none; border: none; font-size: 18px; cursor: pointer; color: #721c24; margin-left: 15px;">&times;</button>
+          </div>
+      {% endfor %}
+  </div>
+{% endif %}
 </html>

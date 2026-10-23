@@ -228,3 +228,40 @@
   padding: 32px;
   flex: 1;
 }
+
+/* ajustes de modo oscuro */
+
+/* Estilos globales para cuando el body tenga la clase dark-mode */
+body.dark-mode {
+    background-color: #121212 !important;
+    color: #e0e0e0 !important;
+}
+
+/* Tarjetas y contenedores principales en modo oscuro */
+body.dark-mode .card, 
+body.dark-mode .sidebar, 
+body.dark-mode .layout,
+body.dark-mode header,
+body.dark-mode .table {
+    background-color: #1e1e1e !important;
+    color: #e0e0e0 !important;
+    border-color: #333 !important;
+}
+
+/* Ajuste de textos secundarios e inputs en modo oscuro */
+body.dark-mode p, 
+body.dark-mode span, 
+body.dark-mode h1, 
+body.dark-mode h2, 
+body.dark-mode h3, 
+body.dark-mode h4 {
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode input, 
+body.dark-mode select, 
+body.dark-mode textarea {
+    background-color: #2d2d2d !important;
+    color: #fff !important;
+    border-color: #444 !important;
+}
