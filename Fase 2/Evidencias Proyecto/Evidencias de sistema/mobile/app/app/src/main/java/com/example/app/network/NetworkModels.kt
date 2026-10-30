@@ -42,6 +42,7 @@ data class GuardarUsuarioRequest(
 data class LoginResponse(
     @SerializedName("success") val success: Boolean,
     @SerializedName("message") val message: String?,
+    @SerializedName("token") val token: String? = null,
     @SerializedName("user") val user: UserDto?
 )
 

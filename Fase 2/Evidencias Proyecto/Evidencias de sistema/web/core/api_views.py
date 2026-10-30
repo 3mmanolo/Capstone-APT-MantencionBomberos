@@ -13,7 +13,8 @@ from django.db.models import Count
 
 #importaciones de permisos api
 from rest_framework.decorators import api_view, permission_classes
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
+from rest_framework.authtoken.models import Token
 from rest_framework.response import Response
 from rest_framework import status
 
@@ -71,9 +72,12 @@ def api_login(request):
 
     initials = ''.join([w[0].upper() for w in nombre.split()[:2]]) if nombre else 'US'
 
+    token_obj, _ = Token.objects.get_or_create(user=user)
+
     return JsonResponse({
         'success': True,
         'message': 'Inicio de sesión exitoso.',
+        'token': token_obj.key,
         'user': {
             'id': user.pk,
             'username': user.username,
@@ -171,7 +175,7 @@ def api_vehiculos(request):
         return JsonResponse({'success': True, 'vehiculos': vehiculos_list})
 
     elif request.method == "POST":
-        data = _get_json_body(request)
+        data = request.data if hasattr(request, 'data') and request.data else _get_json_body(request)
         edit_id = data.get('id') or data.get('edit_id')
         modelo = data.get('modelo', '').strip() or data.get('nombre', '').strip()
         patente = data.get('patente', '').strip()

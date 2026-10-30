@@ -206,6 +206,7 @@ fun LoginScreen(
                         val response = RetrofitClient.apiService.login(LoginRequest(email.trim(), password.trim()))
                         isLoading = false
                         if (response.isSuccessful && response.body()?.success == true) {
+                            RetrofitClient.authToken = response.body()?.token
                             onLoginSuccess()
                         } else {
                             val msg = response.body()?.message ?: "Credenciales incorrectas. Intenta nuevamente."
