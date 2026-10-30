@@ -11,6 +11,12 @@ from django.utils import timezone
 from django.db import transaction
 from django.db.models import Count
 
+#importaciones de permisos api
+from rest_framework.decorators import api_view, permission_classes
+from rest_framework.permissions import IsAuthenticated
+from rest_framework.response import Response
+from rest_framework import status
+
 from .models import Vehiculo, Usuario, Compania, Mantencion, TipoMantencion, Insumo, MantencionInsu
 from .views import _estado_visual_vehiculo
 
@@ -139,8 +145,9 @@ def api_dashboard(request):
         'flota': flota
     })
 
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
 @csrf_exempt
-@require_http_methods(["GET", "POST"])
 def api_vehiculos(request):
     """GET/POST /api/vehiculos/ - Listado o creación/edición de vehículos."""
     if request.method == "GET":
