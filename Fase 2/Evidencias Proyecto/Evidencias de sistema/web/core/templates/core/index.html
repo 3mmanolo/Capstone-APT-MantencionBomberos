@@ -7,6 +7,40 @@
 <title>Iniciar sesión - Control de mantención</title>
 <link rel="icon" type="image/png" href="{% static 'imagenes/logo.png' %}">
 <link rel="stylesheet" href="{% static 'styles.css' %}">
+<style>
+    /* Contenedor relativo para posicionar el icono de manera absoluta dentro del input */
+    .password-container {
+        position: relative;
+        display: flex;
+        align-items: center;
+    }
+    .password-container input {
+        width: 100%;
+        padding-right: 45px; /* Espacio para que el texto no quede debajo del icono */
+    }
+    /* Estilos del botón del ojo */
+    .toggle-password {
+        position: absolute;
+        right: 12px;
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        color: #666;
+        transition: color 0.2s;
+    }
+    .toggle-password:hover {
+        color: #111;
+    }
+    /* Tooltip nativo o flotante al pasar el cursor */
+    .toggle-password svg {
+        width: 20px;
+        height: 20px;
+        fill: currentColor;
+    }
+</style>
 </head>
 <body>
 
@@ -27,13 +61,22 @@
             <p class="sub">Inicia sesión para gestionar la flota del Cuerpo de Bomberos de Talcahuano</p>
 
             <form method="POST" action="{% url 'index' %}">
-                {% csrf_token %}
+                {% csrf_token %>
                 
                 <label>Usuario o correo institucional</label>
                 <input type="text" name="username" placeholder="nombre.apellido@bomberostalcahuano.cl" required>
 
                 <label>Contraseña</label>
-                <input type="password" name="password" placeholder="••••••••" required>
+                <div class="password-container">
+                    <input type="password" name="password" id="id_password" placeholder="••••••••" required>
+                    <!-- Botón con icono de ojo y atributo title para el texto al pasar el cursor -->
+                    <button type="button" class="toggle-password" id="btnTogglePass" title="Mostrar contraseña" onclick="togglePasswordVisibility()">
+                        <!-- Icono de Ojo cerrado por defecto -->
+                        <svg id="eyeIcon" viewBox="0 0 24 24">
+                            <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                        </svg>
+                    </button>
+                </div>
 
                 {% if error %}
                     <p style="color: #ff4d4d; font-size: 0.85rem; margin-top: 5px;">{{ error }}</p>
@@ -49,45 +92,44 @@
               <span class="co">Compañía 1ª · 2ª · 3ª · 4ª</span>
             </div>
 
-      {% else %}
-    <!-- PASO 2: Formulario de Código de Verificación 2FA -->
-    <h1>Verificación<br>de identidad</h1>
-    <p class="sub">Hemos enviado un código de 6 dígitos a tu correo electrónico. Ingrésalo para continuar.</p>
+        {% else %}
+            <!-- PASO 2: Formulario de Código de Verificación 2FA -->
+            <h1>Verificación<br>de identidad</h1>
+            <p class="sub">Hemos enviado un código de 6 dígitos a tu correo electrónico. Ingrésalo para continuar.</p>
 
-    <form method="POST" action="{% url 'index' %}">
-        {% csrf_token %}
-        <!-- Indicador explícito de que estamos verificando código -->
-        <input type="hidden" name="accion" value="verificar_2fa">
-        
-        <label>Código de verificación</label>
-        <input type="text" name="codigo_2fa" placeholder="123456" maxlength="6" style="letter-spacing: 4px; font-weight: bold; text-align: center;" required>
+            <form method="POST" action="{% url 'index' %}">
+                {% csrf_token %>
+                <input type="hidden" name="accion" value="verificar_2fa">
+                
+                <label>Código de verificación</label>
+                <input type="text" name="codigo_2fa" placeholder="123456" maxlength="6" style="letter-spacing: 4px; font-weight: bold; text-align: center;" required>
 
-        {% if error %}
-            <p style="color: #ff4d4d; font-size: 0.85rem; margin-top: 5px;">{{ error }}</p>
+                {% if error %}
+                    <p style="color: #ff4d4d; font-size: 0.85rem; margin-top: 5px;">{{ error }}</p>
+                {% endif %}
+                {% if info_message %}
+                    <p style="color: #4bb543; font-size: 0.85rem; margin-top: 5px;">{{ info_message }}</p>
+                {% endif %}
+
+                <button type="submit" class="btn-primary" style="width:100%; margin-top: 15px;">
+                    Verificar código
+                </button>
+            </form>
+
+            <form method="POST" action="{% url 'index' %}" style="margin-top: 10px;">
+                {% csrf_token %}
+                <input type="hidden" name="accion" value="reenviar_codigo">
+                <button type="submit" style="background: none; border: none; color: #0066cc; cursor: pointer; text-decoration: underline; width: 100%; text-align: center; font-size: 0.85rem;">
+                    ¿No llegó o expiró? Reenviar código
+                </button>
+            </form>
+
+            <div class="login-links" style="margin-top: 15px;">
+              <span class="fp"><a href="{% url 'index' %}" style="color: inherit; text-decoration: none;">← Volver al login</a></span>
+              <span class="co">Compañía 1ª · 2ª · 3ª · 4ª</span>
+            </div>
         {% endif %}
-        {% if info_message %}
-            <p style="color: #4bb543; font-size: 0.85rem; margin-top: 5px;">{{ info_message }}</p>
-        {% endif %}
 
-        <button type="submit" class="btn-primary" style="width:100%; margin-top: 15px;">
-            Verificar código
-        </button>
-    </form>
-
-    <!-- Botón independiente para Reenviar Código -->
-    <form method="POST" action="{% url 'index' %}" style="margin-top: 10px;">
-        {% csrf_token %}
-        <input type="hidden" name="accion" value="reenviar_codigo">
-        <button type="submit" style="background: none; border: none; color: #0066cc; cursor: pointer; text-decoration: underline; width: 100%; text-align: center; font-size: 0.85rem;">
-            ¿No llegó o expiró? Reenviar código
-        </button>
-    </form>
-
-    <div class="login-links" style="margin-top: 15px;">
-      <span class="fp"><a href="{% url 'index' %}" style="color: inherit; text-decoration: none;">← Volver al login</a></span>
-      <span class="co">Compañía 1ª · 2ª · 3ª · 4ª</span>
-    </div>
-     {% endif %}
       </div>
     </div>
 
@@ -101,6 +143,27 @@
 
   </div>
 </div>
+
+<!-- Script de JavaScript para alternar la visibilidad y cambiar el icono -->
+<script>
+function togglePasswordVisibility() {
+    const passwordInput = document.getElementById('id_password');
+    const btnToggle = document.getElementById('btnTogglePass');
+    const eyeIcon = document.getElementById('eyeIcon');
+
+    if (passwordInput.type === 'password') {
+        passwordInput.type = 'text';
+        btnToggle.title = 'Ocultar contraseña';
+        // Icono de ojo abierto tachado o alternativo
+        eyeIcon.innerHTML = '<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2z"/>';
+    } else {
+        passwordInput.type = 'password';
+        btnToggle.title = 'Mostrar contraseña';
+        // Icono de ojo normal (cerrado/ocultando)
+        eyeIcon.innerHTML = '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>';
+    }
+}
+</script>
 
 </body>
 </html>
