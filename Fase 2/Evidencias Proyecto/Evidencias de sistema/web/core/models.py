@@ -26,6 +26,9 @@ class Usuario(models.Model):
         db_column="id_compania", related_name="usuarios",
     )
     telefono = models.CharField(max_length=30, blank=True, default='')
+    # Dentro de tu clase Usuario (o Perfil) en models.py:
+    codigo_2fa = models.CharField(max_length=6, blank=True, null=True)
+    expiracion_2fa = models.DateTimeField(blank=True, null=True)
 
     class Meta:
         db_table = "usuario"

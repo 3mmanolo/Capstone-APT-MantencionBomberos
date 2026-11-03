@@ -1,6 +1,5 @@
 {% load static %}
 
-
 <!DOCTYPE html>
 <html lang="es">
 <head>
@@ -22,32 +21,73 @@
           <span class="login-brand-name">Control de mantención</span>
         </div>
 
-        <h1>Bienvenido<br>de nuevo</h1>
-        <p class="sub">Inicia sesión para gestionar la flota del Cuerpo de Bomberos de Talcahuano</p>
+        {% if not esperando_2fa %}
+            <!-- PASO 1: Formulario de Usuario y Contraseña -->
+            <h1>Bienvenido<br>de nuevo</h1>
+            <p class="sub">Inicia sesión para gestionar la flota del Cuerpo de Bomberos de Talcahuano</p>
 
-       <form method="POST" action="{% url 'index' %}">
-    {% csrf_token %}
-    
-    <label>Usuario o correo institucional</label>
-    <input type="text" name="username" placeholder="nombre.apellido@bomberostalcahuano.cl" required>
+            <form method="POST" action="{% url 'index' %}">
+                {% csrf_token %}
+                
+                <label>Usuario o correo institucional</label>
+                <input type="text" name="username" placeholder="nombre.apellido@bomberostalcahuano.cl" required>
 
-    <label>Contraseña</label>
-    <input type="password" name="password" placeholder="••••••••" required>
+                <label>Contraseña</label>
+                <input type="password" name="password" placeholder="••••••••" required>
 
-    {% if error %}
-        <p style="color: #ff4d4d; font-size: 0.85rem; margin-top: 5px;">{{ error }}</p>
-    {% endif %}
+                {% if error %}
+                    <p style="color: #ff4d4d; font-size: 0.85rem; margin-top: 5px;">{{ error }}</p>
+                {% endif %}
 
-    <button type="submit" class="btn-primary" style="width:100%;">
-        Iniciar sesión
-    </button>
-</form>
+                <button type="submit" class="btn-primary" style="width:100%; margin-top: 15px;">
+                    Iniciar sesión
+                </button>
+            </form>
 
-        <div class="login-links">
-          <span class="fp">¿Olvidaste tu contraseña?</span>
-          <span class="co">Compañía 1ª · 2ª · 3ª · 4ª</span>
-        </div>
+            <div class="login-links">
+              <span class="fp">¿Olvidaste tu contraseña?</span>
+              <span class="co">Compañía 1ª · 2ª · 3ª · 4ª</span>
+            </div>
 
+      {% else %}
+    <!-- PASO 2: Formulario de Código de Verificación 2FA -->
+    <h1>Verificación<br>de identidad</h1>
+    <p class="sub">Hemos enviado un código de 6 dígitos a tu correo electrónico. Ingrésalo para continuar.</p>
+
+    <form method="POST" action="{% url 'index' %}">
+        {% csrf_token %}
+        <!-- Indicador explícito de que estamos verificando código -->
+        <input type="hidden" name="accion" value="verificar_2fa">
+        
+        <label>Código de verificación</label>
+        <input type="text" name="codigo_2fa" placeholder="123456" maxlength="6" style="letter-spacing: 4px; font-weight: bold; text-align: center;" required>
+
+        {% if error %}
+            <p style="color: #ff4d4d; font-size: 0.85rem; margin-top: 5px;">{{ error }}</p>
+        {% endif %}
+        {% if info_message %}
+            <p style="color: #4bb543; font-size: 0.85rem; margin-top: 5px;">{{ info_message }}</p>
+        {% endif %}
+
+        <button type="submit" class="btn-primary" style="width:100%; margin-top: 15px;">
+            Verificar código
+        </button>
+    </form>
+
+    <!-- Botón independiente para Reenviar Código -->
+    <form method="POST" action="{% url 'index' %}" style="margin-top: 10px;">
+        {% csrf_token %}
+        <input type="hidden" name="accion" value="reenviar_codigo">
+        <button type="submit" style="background: none; border: none; color: #0066cc; cursor: pointer; text-decoration: underline; width: 100%; text-align: center; font-size: 0.85rem;">
+            ¿No llegó o expiró? Reenviar código
+        </button>
+    </form>
+
+    <div class="login-links" style="margin-top: 15px;">
+      <span class="fp"><a href="{% url 'index' %}" style="color: inherit; text-decoration: none;">← Volver al login</a></span>
+      <span class="co">Compañía 1ª · 2ª · 3ª · 4ª</span>
+    </div>
+     {% endif %}
       </div>
     </div>
 

@@ -5,7 +5,7 @@ from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.models import User
 from django.db.models import Count
-from django.contrib.auth import authenticate, login, logout
+from django.contrib.auth import authenticate, login, logout, authenticate, get_user_model
 from django.contrib.auth.decorators import login_required
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -21,34 +21,169 @@ from django.urls import path
 #from . import api_views
 from rest_framework.authtoken.views import obtain_auth_token
 
+#imports api_mail y generador codigo login
+import random
+from django.core.mail import send_mail
+from django.conf import settings
+
+
+
 urlpatterns = [
     #path('api/elementos/', api_views.lista_elementos, name='api_lista'),
     path('api/login/', obtain_auth_token, name='api_token_auth'), # Devuelve el token al usuario móvil
 ]
 
+import random
+from django.core.mail import send_mail
+from django.conf import settings
+from django.utils import timezone
+
+
+User = get_user_model()
+
 def index(request):
-    # Si ya hay sesion activa, saltamos directo al dashboard en vez de
-    # mostrar el formulario de login otra vez (esto es lo que generaba la
-    # sensacion de que 'cerrar sesion' no hacia nada: el enlace del sidebar
-    # apuntaba a esta misma vista en vez de a 'logout').
     if request.user.is_authenticated:
         return redirect('dashboard')
 
     error = None
+    info_message = None
+    
+    user_id = request.session.get('pre_auth_user_id')
+    esperando_2fa = bool(user_id)
+
+    # Validar vigencia del código en sesión usando el perfil
+    if user_id:
+        try:
+            user = User.objects.get(pk=user_id)
+            perfil = getattr(user, 'perfil', None)
+            if perfil and perfil.expiracion_2fa:
+                tiempo_actual = timezone.now()
+                expiracion = perfil.expiracion_2fa
+                if timezone.is_naive(expiracion):
+                    expiracion = timezone.make_aware(expiracion, timezone.get_current_timezone())
+
+                if tiempo_actual > expiracion:
+                    del request.session['pre_auth_user_id']
+                    esperando_2fa = False
+                    error = "El código de verificación ha expirado. Inicia sesión nuevamente."
+            else:
+                del request.session['pre_auth_user_id']
+                esperando_2fa = False
+        except Exception:
+            if 'pre_auth_user_id' in request.session:
+                del request.session['pre_auth_user_id']
+            esperando_2fa = False
+
     if request.method == 'POST':
-        username_input = request.POST.get('username')
-        password_input = request.POST.get('password')
+        accion = request.POST.get('accion')
 
-        # Django autentica usando la tabla auth_user nativa
-        user = authenticate(request, username=username_input, password=password_input)
+        # CASO 1: Reenviar código
+        if accion == 'reenviar_codigo' and user_id:
+            try:
+                user = User.objects.get(pk=user_id)
+                perfil = getattr(user, 'perfil', None)
+                if perfil:
+                    codigo_aleatorio = f"{random.randint(100000, 999999)}"
+                    perfil.codigo_2fa = codigo_aleatorio
+                    perfil.expiracion_2fa = timezone.now() + timezone.timedelta(minutes=5)
+                    perfil.save()
+                    
+                    correo_destino = user.email or user.username
+                    send_mail(
+                        subject='Nuevo Código de Verificación - Sistema Bomberos',
+                        message=f'Tu nuevo código de verificación es: {codigo_aleatorio}. Expira en 5 minutos.',
+                        from_email=settings.DEFAULT_FROM_EMAIL,
+                        recipient_list=[correo_destino],
+                        fail_silently=False,
+                    )
+                    esperando_2fa = True
+                    info_message = "Se ha enviado un nuevo código a tu correo."
+            except Exception as e:
+                error = f"Error al reenviar el correo: {str(e)}"
+                esperando_2fa = True
 
-        if user is not None:
-            login(request, user)
-            return redirect('dashboard')
-        else:
-            error = "Usuario o contraseña incorrectos."
+        # CASO 2: Verificar el código ingresado
+        elif accion == 'verificar_2fa' and user_id:
+            codigo_ingresado = request.POST.get('codigo_2fa', '').strip()
+            try:
+                user = User.objects.get(pk=user_id)
+                perfil = getattr(user, 'perfil', None)
+                
+                if perfil and perfil.codigo_2fa and perfil.codigo_2fa.strip() == codigo_ingresado:
+                    tiempo_actual = timezone.now()
+                    expiracion = perfil.expiracion_2fa
+                    if timezone.is_naive(expiracion):
+                        expiracion = timezone.make_aware(expiracion, timezone.get_current_timezone())
 
-    return render(request, 'core/index.html', {'error': error})
+                    if tiempo_actual <= expiracion:
+                        # ¡Código correcto! Limpiamos los campos del perfil y logueamos de verdad
+                        perfil.codigo_2fa = None
+                        perfil.expiracion_2fa = None
+                        perfil.save()
+                        
+                        del request.session['pre_auth_user_id']
+                        login(request, user)
+                        return redirect('dashboard')
+                    else:
+                        error = "El código de verificación ha expirado."
+                        esperando_2fa = True
+                else:
+                    error = "Código de verificación incorrecto."
+                    esperando_2fa = True
+            except Exception as e:
+                error = f"Error en la validación: {str(e)}"
+                if 'pre_auth_user_id' in request.session:
+                    del request.session['pre_auth_user_id']
+                esperando_2fa = False
+
+        # CASO 3: Login inicial (Usuario y Contraseña)
+        elif not esperando_2fa:
+            username_input = request.POST.get('username')
+            password_input = request.POST.get('password')
+
+            if not username_input or not password_input:
+                error = "Proporcione usuario y contraseña."
+            else:
+                # Intentar autenticar por username o email (manteniendo tu lógica original)
+                user = authenticate(request, username=username_input, password=password_input)
+                if user is None and '@' in username_input:
+                    user_obj = User.objects.filter(email__iexact=username_input).first()
+                    if user_obj:
+                        user = authenticate(request, username=user_obj.username, password=password_input)
+
+                if user is not None:
+                    perfil = getattr(user, 'perfil', None)
+                    if perfil:
+                        codigo_aleatorio = f"{random.randint(100000, 999999)}"
+                        perfil.codigo_2fa = codigo_aleatorio
+                        perfil.expiracion_2fa = timezone.now() + timezone.timedelta(minutes=5)
+                        perfil.save()
+
+                        correo_destino = user.email or username_input
+                        try:
+                            send_mail(
+                                subject='Código de Verificación - Sistema Bomberos',
+                                message=f'Hola {perfil.nombre or user.username}, tu código de verificación es: {codigo_aleatorio}. Expira en 5 minutos.',
+                                from_email=settings.DEFAULT_FROM_EMAIL,
+                                recipient_list=[correo_destino],
+                                fail_silently=False,
+                            )
+                            request.session['pre_auth_user_id'] = user.pk
+                            esperando_2fa = True
+                        except Exception as e:
+                            error = f"Error al enviar el correo: {str(e)}"
+                    else:
+                        error = "El usuario no tiene un perfil asociado."
+                else:
+                    error = "Usuario o contraseña incorrectos."
+
+    return render(request, 'core/index.html', {
+        'error': error,
+        'info_message': info_message,
+        'esperando_2fa': esperando_2fa
+    })
+
+
 
 def cerrar_sesion(request):
     logout(request)

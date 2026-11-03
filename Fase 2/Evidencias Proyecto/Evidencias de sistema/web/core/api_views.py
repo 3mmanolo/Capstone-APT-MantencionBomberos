@@ -42,10 +42,14 @@ def _parse_date_safe(date_str):
             pass
     return timezone.localdate() + timezone.timedelta(days=90)
 
+import random
+from django.core.mail import send_mail
+from django.conf import settings
+
 @csrf_exempt
 @require_http_methods(["POST"])
 def api_login(request):
-    """POST /api/login/ - Autentica usuario y retorna perfil."""
+    """POST /api/login/ - Autentica credenciales y envía código 2FA por correo."""
     data = _get_json_body(request)
     username_input = data.get('username') or data.get('email', '')
     password_input = data.get('password', '')
@@ -64,32 +68,39 @@ def api_login(request):
         return JsonResponse({'success': False, 'message': 'Usuario o contraseña incorrectos.'}, status=401)
 
     perfil = getattr(user, 'perfil', None)
-    nombre = perfil.nombre if perfil else (user.get_full_name() or user.username)
-    rol = perfil.rol if perfil else ('Administrador' if user.is_superuser else 'Voluntario')
-    compania_nombre = perfil.id_compania.nombre if (perfil and perfil.id_compania) else 'Sin Compañía'
-    telefono = perfil.telefono if perfil else ''
-    is_admin = user.is_superuser or (rol or '').lower() == 'administrador'
+    if not perfil:
+        return JsonResponse({'success': False, 'message': 'El usuario no tiene un perfil asociado.'}, status=400)
 
-    initials = ''.join([w[0].upper() for w in nombre.split()[:2]]) if nombre else 'US'
+    # --- NUEVO: Generar y enviar código 2FA por correo ---
+    codigo_aleatorio = f"{random.randint(100000, 999999)}"
+    
+    # Guardar el código y su expiración (5 minutos) en el perfil del usuario
+    perfil.codigo_2fa = codigo_aleatorio
+    perfil.expiracion_2fa = timezone.now() + timezone.timedelta(minutes=5)
+    perfil.save()
 
-    token_obj, _ = Token.objects.get_or_create(user=user)
+    # Enviar correo electrónico
+    correo_destino = user.email or username_input
+    try:
+        send_mail(
+            subject='Código de Verificación - Sistema Bomberos',
+            message=f'Hola {perfil.nombre or user.username}, tu código de verificación de doble factor es: {codigo_aleatorio}. Expira en 5 minutos.',
+            from_email=settings.DEFAULT_FROM_EMAIL,
+            recipient_list=[correo_destino],
+            fail_silently=False,
+        )
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Error al enviar el correo: {str(e)}'}, status=500)
 
+    # Retornar señal de que falta el segundo paso (no entregamos el token todavía)
     return JsonResponse({
         'success': True,
-        'message': 'Inicio de sesión exitoso.',
-        'token': token_obj.key,
-        'user': {
-            'id': user.pk,
-            'username': user.username,
-            'email': user.email or username_input,
-            'nombre': nombre,
-            'rol': rol,
-            'compania': compania_nombre,
-            'telefono': telefono,
-            'initials': initials,
-            'isAdmin': is_admin
-        }
+        'requires_2fa': True,
+        'message': 'Credenciales correctas. Se ha enviado un código de verificación a tu correo.',
+        'user_id': user.pk
     })
+
+
 
 @csrf_exempt
 @require_http_methods(["GET"])

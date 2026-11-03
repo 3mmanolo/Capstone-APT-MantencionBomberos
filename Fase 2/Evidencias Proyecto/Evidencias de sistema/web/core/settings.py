@@ -15,6 +15,7 @@ SECRET_KEY = 'django-insecure-p5=wcenru#8vjdlhelrvnn%hepggw%bgive!$-1wm8@lc^$3+1
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
+#desactivar en fase de produccion
 
 # Permitir conexiones desde cualquier origen / IP (ideal para Docker y dispositivos móviles)
 ALLOWED_HOSTS = ['*']
@@ -137,3 +138,14 @@ CORS_ALLOW_ALL_ORIGINS = True
 
 # Habilitar el envío de credenciales o tokens en los headers
 CORS_ALLOW_CREDENTIALS = True
+
+
+
+# Configuración del servidor de correo en settings.py
+EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
+EMAIL_HOST = 'smtp.gmail.com'  # O el servidor SMTP que utilicen
+EMAIL_PORT = 587
+EMAIL_USE_TLS = True
+EMAIL_HOST_USER = 'emma.exmx@gmail.com'
+EMAIL_HOST_PASSWORD = 'ghmsrvsyctrjyxro'
+DEFAULT_FROM_EMAIL = 'Sistema Bomberos <emma.exmx@gmail.com>'
