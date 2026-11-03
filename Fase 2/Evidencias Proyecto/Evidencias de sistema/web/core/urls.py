@@ -34,6 +34,8 @@ urlpatterns = [
 
     # Endpoints API REST para la aplicación móvil Android
     path('api/login/', api_views.api_login, name='api_login'),
+    path('api/verify-2fa/', api_views.api_verificar_2fa, name='api_verificar_2fa'),
+    path('api/reenviar-2fa/', api_views.api_reenviar_2fa, name='api_reenviar_2fa'),
     path('api/dashboard/', api_views.api_dashboard, name='api_dashboard'),
     path('api/vehiculos/', api_views.api_vehiculos, name='api_vehiculos'),
     path('api/vehiculos/<int:vehiculo_id>/eliminar/', api_views.api_vehiculo_eliminar, name='api_vehiculo_eliminar'),

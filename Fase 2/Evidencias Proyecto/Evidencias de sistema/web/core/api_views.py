@@ -101,6 +101,99 @@ def api_login(request):
     })
 
 
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_verificar_2fa(request):
+    """POST /api/verify-2fa/ - Verifica el código de 6 dígitos enviado al correo."""
+    data = _get_json_body(request)
+    user_id = data.get('user_id')
+    codigo_ingresado = str(data.get('codigo_2fa', '')).strip()
+
+    if not user_id or not codigo_ingresado:
+        return JsonResponse({'success': False, 'message': 'Proporcione el usuario y el código de verificación.'}, status=400)
+
+    try:
+        user = User.objects.get(pk=user_id)
+        perfil = getattr(user, 'perfil', None)
+
+        if perfil and perfil.codigo_2fa and perfil.codigo_2fa.strip() == codigo_ingresado:
+            tiempo_actual = timezone.now()
+            expiracion = perfil.expiracion_2fa
+            if timezone.is_naive(expiracion):
+                expiracion = timezone.make_aware(expiracion, timezone.get_current_timezone())
+
+            if tiempo_actual <= expiracion:
+                # Código correcto: limpiamos el código 2FA y retornamos el token de autenticación
+                perfil.codigo_2fa = None
+                perfil.expiracion_2fa = None
+                perfil.save()
+
+                token_obj, _ = Token.objects.get_or_create(user=user)
+                nombre = perfil.nombre or (user.get_full_name() or user.username)
+                rol = perfil.rol or ('Administrador' if user.is_superuser else 'Voluntario')
+                compania_nombre = perfil.id_compania.nombre if perfil.id_compania else 'Sin Compañía'
+                telefono = perfil.telefono or ''
+                is_admin = user.is_superuser or (rol or '').lower() == 'administrador'
+                initials = ''.join([w[0].upper() for w in nombre.split()[:2]]) if nombre else 'US'
+
+                return JsonResponse({
+                    'success': True,
+                    'message': 'Autenticación exitosa.',
+                    'token': token_obj.key,
+                    'user': {
+                        'id': user.pk,
+                        'username': user.username,
+                        'email': user.email,
+                        'nombre': nombre,
+                        'rol': rol,
+                        'compania': compania_nombre,
+                        'telefono': telefono,
+                        'initials': initials,
+                        'isAdmin': is_admin
+                    }
+                })
+            else:
+                return JsonResponse({'success': False, 'message': 'El código de verificación ha expirado. Reenvía uno nuevo.'}, status=400)
+        else:
+            return JsonResponse({'success': False, 'message': 'Código de verificación incorrecto.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Error al validar código: {str(e)}'}, status=500)
+
+
+@csrf_exempt
+@require_http_methods(["POST"])
+def api_reenviar_2fa(request):
+    """POST /api/reenviar-2fa/ - Genera y reenvía un nuevo código de 6 dígitos."""
+    data = _get_json_body(request)
+    user_id = data.get('user_id')
+
+    if not user_id:
+        return JsonResponse({'success': False, 'message': 'Proporcione el identificador del usuario.'}, status=400)
+
+    try:
+        user = User.objects.get(pk=user_id)
+        perfil = getattr(user, 'perfil', None)
+        if perfil:
+            codigo_aleatorio = f"{random.randint(100000, 999999)}"
+            perfil.codigo_2fa = codigo_aleatorio
+            perfil.expiracion_2fa = timezone.now() + timezone.timedelta(minutes=5)
+            perfil.save()
+
+            correo_destino = user.email or user.username
+            send_mail(
+                subject='Nuevo Código de Verificación - Sistema Bomberos',
+                message=f'Hola {perfil.nombre or user.username}, tu nuevo código de verificación es: {codigo_aleatorio}. Expira en 5 minutos.',
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                recipient_list=[correo_destino],
+                fail_silently=False,
+            )
+            return JsonResponse({'success': True, 'message': 'Se ha enviado un nuevo código a tu correo.'})
+        else:
+            return JsonResponse({'success': False, 'message': 'El usuario no tiene perfil asociado.'}, status=400)
+    except Exception as e:
+        return JsonResponse({'success': False, 'message': f'Error al reenviar el correo: {str(e)}'}, status=500)
+
+
 
 @csrf_exempt
 @require_http_methods(["GET"])
