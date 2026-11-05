@@ -41,9 +41,20 @@ data class GuardarUsuarioRequest(
 // Modelos de Respuesta (Response)
 data class LoginResponse(
     @SerializedName("success") val success: Boolean,
+    @SerializedName("requires_2fa") val requires2FA: Boolean? = false,
+    @SerializedName("user_id") val userId: Int? = null,
     @SerializedName("message") val message: String?,
-    @SerializedName("token") val token: String? = null,
+    @SerializedName("token") val token: String?,
     @SerializedName("user") val user: UserDto?
+)
+
+data class Verify2FARequest(
+    @SerializedName("user_id") val userId: Int,
+    @SerializedName("codigo_2fa") val codigo2FA: String
+)
+
+data class Reenviar2FARequest(
+    @SerializedName("user_id") val userId: Int
 )
 
 data class UserDto(

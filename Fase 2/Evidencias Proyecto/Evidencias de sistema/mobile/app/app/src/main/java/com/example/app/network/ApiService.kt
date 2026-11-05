@@ -12,6 +12,12 @@ interface ApiService {
     @POST("api/login/")
     suspend fun login(@Body request: LoginRequest): Response<LoginResponse>
 
+    @POST("api/verify-2fa/")
+    suspend fun verify2FA(@Body request: Verify2FARequest): Response<LoginResponse>
+
+    @POST("api/reenviar-2fa/")
+    suspend fun reenviar2FA(@Body request: Reenviar2FARequest): Response<GenericResponse>
+
     @GET("api/dashboard/")
     suspend fun getDashboard(): Response<DashboardResponse>
 

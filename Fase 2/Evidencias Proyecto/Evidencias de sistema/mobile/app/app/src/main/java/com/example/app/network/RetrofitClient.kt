@@ -8,8 +8,8 @@ import java.util.concurrent.TimeUnit
 
 object RetrofitClient {
 
-    // IP local actual de tu PC en la red Wi-Fi:
-    const val BASE_URL = "http://10.154.152.203:8000/"
+    // URL fija del túnel público HTTPS (funciona desde cualquier red 4G/5G/Wi-Fi):
+    const val BASE_URL = "https://bomberos-melipilla.loca.lt/"
 
     // Variable global para guardar el Token de autenticación de la sesión
     var authToken: String? = null
