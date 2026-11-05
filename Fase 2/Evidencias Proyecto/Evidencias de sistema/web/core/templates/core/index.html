@@ -61,7 +61,7 @@
             <p class="sub">Inicia sesión para gestionar la flota del Cuerpo de Bomberos de Talcahuano</p>
 
             <form method="POST" action="{% url 'index' %}">
-                {% csrf_token %>
+                {% csrf_token %}
                 
                 <label>Usuario o correo institucional</label>
                 <input type="text" name="username" placeholder="nombre.apellido@bomberostalcahuano.cl" required>
@@ -98,7 +98,7 @@
             <p class="sub">Hemos enviado un código de 6 dígitos a tu correo electrónico. Ingrésalo para continuar.</p>
 
             <form method="POST" action="{% url 'index' %}">
-                {% csrf_token %>
+                {% csrf_token %}
                 <input type="hidden" name="accion" value="verificar_2fa">
                 
                 <label>Código de verificación</label>

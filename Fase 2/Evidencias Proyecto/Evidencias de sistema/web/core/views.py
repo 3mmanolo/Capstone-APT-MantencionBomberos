@@ -88,7 +88,8 @@ def index(request):
                     perfil.expiracion_2fa = timezone.now() + timezone.timedelta(minutes=5)
                     perfil.save()
                     
-                    correo_destino = user.email or user.username
+                    # Usar el campo mail del perfil (o email si aplica como respaldo)
+                    correo_destino = getattr(perfil, 'mail', None) or getattr(perfil, 'email', None) or user.email or user.username
                     send_mail(
                         subject='Nuevo Código de Verificación - Sistema Bomberos',
                         message=f'Tu nuevo código de verificación es: {codigo_aleatorio}. Expira en 5 minutos.',
@@ -144,7 +145,7 @@ def index(request):
             if not username_input or not password_input:
                 error = "Proporcione usuario y contraseña."
             else:
-                # Intentar autenticar por username o email (manteniendo tu lógica original)
+                # Intentar autenticar por username o email
                 user = authenticate(request, username=username_input, password=password_input)
                 if user is None and '@' in username_input:
                     user_obj = User.objects.filter(email__iexact=username_input).first()
@@ -159,11 +160,12 @@ def index(request):
                         perfil.expiracion_2fa = timezone.now() + timezone.timedelta(minutes=5)
                         perfil.save()
 
-                        correo_destino = user.email or username_input
+                        # Tomar el correo desde el campo mail del perfil
+                        correo_destino = getattr(perfil, 'mail', None) or getattr(perfil, 'email', None) or user.email or username_input
                         try:
                             send_mail(
                                 subject='Código de Verificación - Sistema Bomberos',
-                                message=f'Hola {perfil.nombre or user.username}, tu código de verificación es: {codigo_aleatorio}. Expira en 5 minutos.',
+                                message=f'Hola {getattr(perfil, "nombre", None) or user.username}, tu código de verificación es: {codigo_aleatorio}. Expira en 5 minutos.',
                                 from_email=settings.DEFAULT_FROM_EMAIL,
                                 recipient_list=[correo_destino],
                                 fail_silently=False,
@@ -182,7 +184,6 @@ def index(request):
         'info_message': info_message,
         'esperando_2fa': esperando_2fa
     })
-
 
 
 def cerrar_sesion(request):

@@ -47,6 +47,9 @@ REST_FRAMEWORK = {
     ],
 }
 
+# En desarrollo local con http://localhost:8000 debe estar en False
+CSRF_COOKIE_SECURE = False
+
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # Debe ir lo más arriba posible
     'django.middleware.security.SecurityMiddleware',

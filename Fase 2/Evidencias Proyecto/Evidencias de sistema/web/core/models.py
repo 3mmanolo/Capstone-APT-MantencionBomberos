@@ -25,6 +25,7 @@ class Usuario(models.Model):
         Compania, on_delete=models.SET_NULL, null=True, blank=True,
         db_column="id_compania", related_name="usuarios",
     )
+    email = models.EmailField(unique=True, null=True, blank=True)
     telefono = models.CharField(max_length=30, blank=True, default='')
     # Dentro de tu clase Usuario (o Perfil) en models.py:
     codigo_2fa = models.CharField(max_length=6, blank=True, null=True)
