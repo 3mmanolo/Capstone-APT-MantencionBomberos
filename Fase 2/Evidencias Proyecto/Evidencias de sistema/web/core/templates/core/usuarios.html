@@ -55,7 +55,7 @@
         <div><p class="name">{{ current_user.name }}</p><p class="role">Cerrar sesión</p></div>
       </a>
     </div>
-  </div> <!-- SE AÑADE DIV DE CIERRE DEL SIDEBAR AQUÍ -->
+  </div>
 
   <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
 
@@ -94,16 +94,24 @@
           </div>
           <div>
             <label>Correo institucional</label>
-            <input type="email" id="f-email" name="email" placeholder="nombre.apellido@bomberostalcahuano.cl">
+            <input type="email" id="f-email" name="email" placeholder="nombre.apellido@bomberostalcahuano.cl" required>
           </div>
         </div>
 
-        <!-- La contraseña solo se pide al crear un usuario nuevo -->
-        <div id="f-pass-wrap" style="margin-bottom:16px;">
-          <label>Contraseña</label>
-          <input type="password" id="f-pass" name="password" placeholder="Mínimo 8 caracteres" minlength="8" autocomplete="new-password">
+        <!-- Contraseña (Obligatoria al crear, opcional/cambio seguro al editar) -->
+        <div style="margin-bottom:16px;">
+          <label id="f-pass-label">Contraseña</label>
+          <div class="password-container">
+              <input type="password" id="f-pass" name="password" placeholder="Mínimo 8 caracteres" minlength="8" autocomplete="new-password">
+              <!-- Botón del ojo para alternar visibilidad -->
+              <button type="button" class="toggle-password" id="btnTogglePassUser" title="Mostrar contraseña" onclick="toggleUserPasswordVisibility()">
+                  <svg id="eyeIconUser" viewBox="0 0 24 24">
+                      <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                  </svg>
+              </button>
+          </div>
+          <small id="f-pass-help" style="color: var(--text2); display: none; font-size: 11px; margin-top: 4px;">Déjalo en blanco si no deseas cambiar la contraseña del usuario.</small>
         </div>
-
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:20px;">
           <div>
             <label>Compañía</label>
@@ -164,14 +172,13 @@
 
 <script>
   const CURRENT_USER = JSON.parse(document.getElementById('current-user-data').textContent);
-let USERS = JSON.parse(document.getElementById('users-data').textContent);
+  let USERS = JSON.parse(document.getElementById('users-data').textContent);
 
-// Validación segura: si es un string (caso borde), volvemos a parsear
-const userObj = typeof CURRENT_USER === 'string' ? JSON.parse(CURRENT_USER) : CURRENT_USER;
+  const userObj = typeof CURRENT_USER === 'string' ? JSON.parse(CURRENT_USER) : CURRENT_USER;
 
-if (!userObj || !userObj.isAdmin) {
-    window.location.href = '/dashboard/';
-}
+  if (!userObj || !userObj.isAdmin) {
+      window.location.href = '/dashboard/';
+  }
   document.querySelectorAll('.nav-usuarios, .nav-vehiculos').forEach(el => el.style.display = 'flex');
 
   const tbody = document.getElementById('users-body');
@@ -209,12 +216,12 @@ if (!userObj || !userObj.isAdmin) {
           <td>${pillHTML}</td>
           <td style="text-align:right; white-space:nowrap;">
             <svg onclick="editUser('${u.id}')" style="cursor:pointer; margin-right:14px; vertical-align:middle;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4.5-1 10-10a2 2 0 0 0-3-3l-10 10-1 4.5z"/><path d="M13 6l3 3"/></svg>
-         <button type="button" onclick="deleteUser('${u.id}')" style="background:none; border:none; padding:0; cursor:pointer; vertical-align:middle;">
-  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
-    <path d="M5 7h14"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M7 7l1 12a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-12"/><path d="M10 11v6"/><path d="M14 11v6"/>
-  </svg>
-</button>
-            </td>
+            <button type="button" onclick="deleteUser('${u.id}')" style="background:none; border:none; padding:0; cursor:pointer; vertical-align:middle;">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M5 7h14"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M7 7l1 12a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-12"/><path d="M10 11v6"/><path d="M14 11v6"/>
+              </svg>
+            </button>
+          </td>
         </tr>
       `;
     }).join('');
@@ -224,15 +231,19 @@ if (!userObj || !userObj.isAdmin) {
     formCard.style.display = 'block';
     const emailInput = document.getElementById('f-email');
     const passInput = document.getElementById('f-pass');
-    // El correo y la contraseña solo se definen al crear; al editar no se envían
-    emailInput.disabled = !!user;
-    emailInput.required = !user;
-    passInput.disabled = !!user;
-    passInput.required = !user;
+    const passHelp = document.getElementById('f-pass-help');
+    
+    // El correo siempre está habilitado para permitir cambios
+    emailInput.disabled = false;
+    emailInput.required = true;
+    passInput.disabled = false;
     passInput.value = '';
-    document.getElementById('f-pass-wrap').style.display = user ? 'none' : 'block';
+
     if (user) {
       formTitle.textContent = 'Editar usuario';
+      passInput.required = false; // Opcional al editar
+      passInput.placeholder = '••••••••';
+      passHelp.style.display = 'block'; // Mostrar ayuda de contraseña opcional
       document.getElementById('edit-id').value = user.id;
       document.getElementById('f-name').value = user.name;
       emailInput.value = user.email;
@@ -240,6 +251,9 @@ if (!userObj || !userObj.isAdmin) {
       document.getElementById('f-role').value = user.role;
     } else {
       formTitle.textContent = 'Agregar usuario';
+      passInput.required = true; // Obligatorio al crear
+      passInput.placeholder = 'Mínimo 8 caracteres';
+      passHelp.style.display = 'none'; // Ocultar ayuda
       document.getElementById('edit-id').value = '';
       document.getElementById('f-name').value = '';
       emailInput.value = '';
@@ -250,7 +264,6 @@ if (!userObj || !userObj.isAdmin) {
   }
 
   window.editUser = function(id) {
-    // Convertimos ambos a String para asegurar coincidencia exacta
     const user = USERS.find(u => String(u.id) === String(id));
     if (user) {
       openForm(user);
@@ -259,7 +272,7 @@ if (!userObj || !userObj.isAdmin) {
     }
   };
 
- window.deleteUser = function(id) {
+  window.deleteUser = function(id) {
     const user = USERS.find(u => String(u.id) === String(id));
     if (!user) {
       console.error("Usuario no encontrado para eliminar con ID:", id);
@@ -278,12 +291,12 @@ if (!userObj || !userObj.isAdmin) {
       }
     }
   };
+
   document.getElementById('btn-nuevo-usuario').addEventListener('click', () => openForm(null));
   document.getElementById('btn-cancelar').addEventListener('click', () => formCard.style.display = 'none');
 
   render();
 
-  // Si el alta fue rechazada, se reabre el formulario con lo que se había ingresado
   const FORM_DATA = JSON.parse(document.getElementById('form-data').textContent);
   if (FORM_DATA) {
     openForm(null);
@@ -309,9 +322,27 @@ if (!userObj || !userObj.isAdmin) {
       sidebar.querySelectorAll("a").forEach(a => a.addEventListener("click", closeMenu));
     }
   })();
-  // Aplica el modo oscuro guardado al cargar cualquier página
   if (localStorage.getItem('darkMode') === 'enabled') {
-      document.body.classList.add('dark-mode');}
+      document.body.classList.add('dark-mode');
+  }
+
+
+  // Función para alternar la visibilidad de la contraseña en la gestión de usuarios
+  function toggleUserPasswordVisibility() {
+      const passwordInput = document.getElementById('f-pass');
+      const btnToggle = document.getElementById('btnTogglePassUser');
+      const eyeIcon = document.getElementById('eyeIconUser');
+
+      if (passwordInput.type === 'password') {
+          passwordInput.type = 'text';
+          btnToggle.title = 'Ocultar contraseña';
+          eyeIcon.innerHTML = '<path d="M12 7c2.76 0 5 2.24 5 5 0 .65-.13 1.26-.36 1.83l2.92 2.92c1.51-1.26 2.7-2.89 3.43-4.75-1.73-4.39-6-7.5-11-7.5-1.4 0-2.74.25-3.98.7l2.16 2.16C10.74 7.13 11.35 7 12 7zM2 4.27l2.28 2.28.46.46C3.08 8.3 1.78 10.02 1 12c1.73 4.39 6 7.5 11 7.5 1.55 0 3.03-.3 4.38-.84l.42.42L19.73 22 21 20.73 3.27 3 2 4.27zM7.53 9.8l1.55 1.55c-.05.21-.08.43-.08.65 0 1.66 1.34 3 3 3 .22 0 .44-.03.65-.08l1.55 1.55c-.67.33-1.41.53-2.2.53-2.76 0-5-2.24-5-5 0-.79.2-1.53.53-2.2z"/>';
+      } else {
+          passwordInput.type = 'password';
+          btnToggle.title = 'Mostrar contraseña';
+          eyeIcon.innerHTML = '<path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>';
+      }
+  }
 </script>
 
 </body>

@@ -550,6 +550,7 @@ from .models import Usuario
 
 ROLES_USUARIO = ['Administrador', 'Encargado de flota', 'Voluntario', 'Chofer']
 
+
 @login_required(login_url='index')
 def usuarios(request):
     is_admin = False
@@ -571,61 +572,88 @@ def usuarios(request):
         if action == 'delete':
             user_id = request.POST.get('user_id')
             if user_id:
-                # Se elimina por la clave primaria sin importar la convención del ID
                 Usuario.objects.filter(pk=user_id).delete()
             return redirect('usuarios')
 
         elif action == 'save':
             user_id = request.POST.get('edit_id')
             nombre = request.POST.get('nombre')
+            email = request.POST.get('email', '').strip().lower()
             rol = request.POST.get('rol')
             compania_id = request.POST.get('compania')
+            nueva_password = request.POST.get('password', '').strip()
 
+            # --- CASO 1: EDICIÓN DE UN USUARIO EXISTENTE ---
             if user_id:
                 u = get_object_or_404(Usuario, pk=user_id)
                 u.nombre = nombre
                 u.rol = rol
+                compania_obj = Compania.objects.filter(pk=compania_id).first() if compania_id else None
                 if compania_id:
                     u.id_compania_id = compania_id
-                u.save()
-                return redirect('usuarios')
+                
+                # Actualizar y validar correo si fue modificado
+                if email and u.user:
+                    try:
+                        validate_email(email)
+                    except ValidationError:
+                        errores.append('Ingresa un correo válido.')
+                    else:
+                        if User.objects.filter(email__iexact=email).exclude(pk=u.user.pk).exists():
+                            errores.append('Ya existe otro usuario con ese correo.')
+                        else:
+                            u.user.email = email
+                            u.user.username = email.split('@')[0]
+                            u.user.save()
 
-            # Alta de un usuario nuevo: cuenta de acceso (auth_user) + perfil
-            nombre = (nombre or '').strip()
-            email = request.POST.get('email', '').strip().lower()
-            password = request.POST.get('password', '')
-            # El nombre de usuario para iniciar sesión es la parte del correo antes de la @
-            username = email.split('@')[0]
-            compania_obj = Compania.objects.filter(pk=compania_id).first() if compania_id else None
+                # Actualizar contraseña opcionalmente de forma segura
+                if u.user and nueva_password:
+                    try:
+                        validate_password(nueva_password, user=u.user)
+                        u.user.set_password(nueva_password)
+                        u.user.save()
+                    except ValidationError as e:
+                        errores.extend(e.messages)
 
-            if not nombre:
-                errores.append('Ingresa el nombre completo.')
-            elif nombre.isdigit():
-                errores.append('El nombre no puede contener solo números.')
-            try:
-                validate_email(email)
-            except ValidationError:
-                errores.append('Ingresa un correo válido.')
+                if not errores:
+                    u.save()
+                    return redirect('usuarios')
+
+            # --- CASO 2: ALTA DE UN USUARIO NUEVO ---
             else:
-                if User.objects.filter(email__iexact=email).exists() or User.objects.filter(username__iexact=username).exists():
-                    errores.append('Ya existe un usuario con ese correo.')
-            if rol not in ROLES_USUARIO:
-                errores.append('Selecciona un rol válido.')
-            if compania_id and not compania_obj:
-                errores.append('Selecciona una compañía válida.')
-            try:
-                validate_password(password, user=User(username=username, email=email))
-            except ValidationError:
-                errores.append('La contraseña debe tener al menos 8 caracteres, no ser solo números, '
-                               'no ser una clave común ni parecerse al correo.')
+                nombre = (nombre or '').strip()
+                password = request.POST.get('password', '')
+                username = email.split('@')[0] if email else ''
+                compania_obj = Compania.objects.filter(pk=compania_id).first() if compania_id else None
 
-            if not errores:
-                with transaction.atomic():
-                    nuevo = User.objects.create_user(username=username, email=email, password=password)
-                    Usuario.objects.create(user=nuevo, nombre=nombre, rol=rol, id_compania=compania_obj)
-                return redirect('usuarios')
+                if not nombre:
+                    errores.append('Ingresa el nombre completo.')
+                elif nombre.isdigit():
+                    errores.append('El nombre no puede contener solo números.')
+                try:
+                    validate_email(email)
+                except ValidationError:
+                    errores.append('Ingresa un correo válido.')
+                else:
+                    if User.objects.filter(email__iexact=email).exists() or User.objects.filter(username__iexact=username).exists():
+                        errores.append('Ya existe un usuario con ese correo.')
+                if rol not in ROLES_USUARIO:
+                    errores.append('Selecciona un rol válido.')
+                if compania_id and not compania_obj:
+                    errores.append('Selecciona una compañía válida.')
+                try:
+                    validate_password(password, user=User(username=username, email=email))
+                except ValidationError:
+                    errores.append('La contraseña debe tener al menos 8 caracteres, no ser solo números, '
+                                   'no ser una clave común ni parecerse al correo.')
 
-            # Se devuelve lo ingresado (menos la contraseña) para no perderlo
+                if not errores:
+                    with transaction.atomic():
+                        nuevo = User.objects.create_user(username=username, email=email, password=password)
+                        Usuario.objects.create(user=nuevo, nombre=nombre, rol=rol, id_compania=compania_obj)
+                    return redirect('usuarios')
+
+            # Si hay errores, guardamos los datos para no perderlos en el formulario
             form_data = {'name': nombre, 'email': email, 'role': rol, 'comp_id': compania_id or ''}
 
     users_data = []
