@@ -35,7 +35,8 @@ data class GuardarUsuarioRequest(
     @SerializedName("email") val email: String,
     @SerializedName("rol") val rol: String,
     @SerializedName("compania_id") val companiaId: Int?,
-    @SerializedName("telefono") val telefono: String
+    @SerializedName("telefono") val telefono: String,
+    @SerializedName("password") val password: String? = null
 )
 
 // Modelos de Respuesta (Response)

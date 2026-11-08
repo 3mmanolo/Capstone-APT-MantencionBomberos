@@ -58,3 +58,23 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.test.manifest)
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
+
+// Copiar automáticamente la APK generada al Escritorio tras cada compilación
+val copyApkTask = tasks.register("copyApkToDesktop") {
+    doNotTrackState("Copia la APK al Escritorio")
+    val buildDir = layout.buildDirectory
+    doLast {
+        val apkFile = File(buildDir.get().asFile, "outputs/apk/debug/app-debug.apk")
+        val desktopFolder = File(System.getProperty("user.home"), "OneDrive/Desktop").takeIf { it.exists() }
+            ?: File(System.getProperty("user.home"), "Desktop")
+        if (apkFile.exists() && desktopFolder.exists()) {
+            val targetFile = File(desktopFolder, "app-debug.apk")
+            apkFile.copyTo(targetFile, overwrite = true)
+            println("APK copiada automáticamente al Escritorio: ${targetFile.absolutePath}")
+        }
+    }
+}
+
+afterEvaluate {
+    tasks.findByName("assembleDebug")?.finalizedBy(copyApkTask)
+}

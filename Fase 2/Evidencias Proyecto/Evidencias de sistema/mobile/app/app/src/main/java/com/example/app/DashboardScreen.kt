@@ -1,6 +1,11 @@
 package com.example.app
 
 import androidx.activity.compose.BackHandler
+import android.content.pm.PackageManager
+import android.os.Build
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.core.content.ContextCompat
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -57,6 +62,40 @@ fun DashboardScreen(
     onExitApp: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
+
+    // Lanzador para solicitar permiso de notificaciones en Android 13+ (API 33+)
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { _ -> }
+
+    LaunchedEffect(Unit) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            val permission = android.Manifest.permission.POST_NOTIFICATIONS
+            if (ContextCompat.checkSelfPermission(context, permission) != PackageManager.PERMISSION_GRANTED) {
+                permissionLauncher.launch(permission)
+            }
+        }
+
+        // Consultar notificaciones de mantenciones por vencer y vencidas desde la API
+        try {
+            val response = RetrofitClient.apiService.getNotificaciones()
+            if (response.isSuccessful && response.body()?.success == true) {
+                val notificaciones = response.body()!!.notificaciones
+                notificaciones.forEachIndexed { index, notif ->
+                    NotificationHelper.showNotification(
+                        context = context,
+                        id = 3000 + index,
+                        title = notif.titulo,
+                        message = notif.mensaje
+                    )
+                }
+            }
+        } catch (e: Exception) {
+            // Silencioso
+        }
+    }
+
     var selectedTab by remember { mutableStateOf(0) }
     
     // Estado para manejar si hay un vehículo seleccionado desde el inicio

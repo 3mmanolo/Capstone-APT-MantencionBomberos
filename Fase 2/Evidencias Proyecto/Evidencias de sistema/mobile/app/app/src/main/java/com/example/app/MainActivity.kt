@@ -17,6 +17,8 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.core.view.WindowCompat
+import com.example.app.network.RetrofitClient
 import com.example.app.ui.theme.AppTheme
 import kotlinx.coroutines.delay
 
@@ -24,12 +26,20 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        // Inicializar la configuración de red y URL del servidor backend
+        RetrofitClient.init(this)
+
         // Habilita el diseño de borde a borde (detrás de la barra de estado y navegación)
         enableEdgeToEdge()
         
         setContent {
             val systemInDarkTheme = isSystemInDarkTheme()
             var isDarkMode by remember { mutableStateOf(systemInDarkTheme) }
+
+            // Ajustar el color de los iconos de la barra de estado (oscuros en modo claro, claros en modo oscuro)
+            LaunchedEffect(isDarkMode) {
+                WindowCompat.getInsetsController(window, window.decorView).isAppearanceLightStatusBars = !isDarkMode
+            }
             
             AppTheme(darkTheme = isDarkMode) {
                 var isLoggedIn by remember { mutableStateOf(false) }

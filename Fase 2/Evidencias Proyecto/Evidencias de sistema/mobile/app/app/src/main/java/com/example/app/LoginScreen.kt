@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -37,6 +38,7 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
+import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
@@ -71,6 +73,7 @@ fun LoginScreen(
 
     var errorMessage by remember { mutableStateOf("") }
     var isLoading by remember { mutableStateOf(false) }
+    var passwordVisible by remember { mutableStateOf(false) }
 
     val coroutineScope = rememberCoroutineScope()
 
@@ -78,6 +81,7 @@ fun LoginScreen(
         modifier = modifier
             .fillMaxSize()
             .background(BomberosBackground)
+            .statusBarsPadding()
             .padding(horizontal = 24.dp),
         verticalArrangement = Arrangement.Center,
         horizontalAlignment = Alignment.CenterHorizontally
@@ -177,8 +181,20 @@ fun LoginScreen(
                         ) 
                     },
                     singleLine = true,
-                    visualTransformation = PasswordVisualTransformation(),
+                    visualTransformation = if (passwordVisible) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
+                    trailingIcon = {
+                        TextButton(
+                            onClick = { passwordVisible = !passwordVisible }
+                        ) {
+                            Text(
+                                text = if (passwordVisible) "Ocultar" else "Mostrar",
+                                color = BomberosOrange,
+                                fontSize = 12.sp,
+                                fontWeight = FontWeight.SemiBold
+                            )
+                        }
+                    },
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
                         focusedTextColor = Color.White,
@@ -231,12 +247,23 @@ fun LoginScreen(
                                     onLoginSuccess()
                                 }
                             } else {
-                                val msg = response.body()?.message ?: "Credenciales incorrectas. Intenta nuevamente."
-                                errorMessage = msg
+                                val errorJson = try { response.errorBody()?.string() } catch (e: Exception) { null }
+                                val msg = if (errorJson != null && errorJson.contains("message")) {
+                                    try {
+                                        com.google.gson.JsonParser.parseString(errorJson).asJsonObject.get("message").asString
+                                    } catch (e: Exception) { null }
+                                } else null
+
+                                errorMessage = msg ?: when (response.code()) {
+                                    401 -> "Usuario o contraseña incorrectos."
+                                    404 -> "Servidor o endpoint no encontrado (404). Verifica que el backend/túnel esté activo."
+                                    502, 503 -> "Servidor o túnel no disponible (502/503)."
+                                    else -> "Error en el servidor (${response.code()}). Intenta nuevamente."
+                                }
                             }
                         } catch (e: Exception) {
                             isLoading = false
-                            errorMessage = "Error de conexión: No se pudo conectar al servidor de la base de datos."
+                            errorMessage = "Error de conexión: No se pudo conectar al servidor."
                         }
                     }
                 },
