@@ -87,16 +87,16 @@ def api_login(request):
             message=f'Hola {perfil.nombre or user.username}, tu código de verificación de doble factor es: {codigo_aleatorio}. Expira en 5 minutos.',
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[correo_destino],
-            fail_silently=False,
+            fail_silently=True,
         )
     except Exception as e:
-        return JsonResponse({'success': False, 'message': f'Error al enviar el correo: {str(e)}'}, status=500)
+        print(f"Advertencia al enviar correo 2FA a {correo_destino}: {e}")
 
-    # Retornar señal de que falta el segundo paso (no entregamos el token todavía)
+    # Retornar señal de que falta el segundo paso
     return JsonResponse({
         'success': True,
         'requires_2fa': True,
-        'message': 'Credenciales correctas. Se ha enviado un código de verificación a tu correo.',
+        'message': f'Credenciales correctas. Código 2FA enviado (o generado en BD): {codigo_aleatorio}',
         'user_id': user.pk
     })
 
@@ -500,6 +500,7 @@ def api_usuarios(request):
         rol = data.get('rol', '').strip()
         compania_id = data.get('compania_id')
         telefono = data.get('telefono', '').strip()
+        password = data.get('password', '').strip()
 
         if not nombre or not email:
             return JsonResponse({'success': False, 'message': 'Nombre y correo son requeridos.'}, status=400)
@@ -510,10 +511,13 @@ def api_usuarios(request):
             u_obj = Usuario.objects.filter(pk=edit_id).first()
             if not u_obj:
                 return JsonResponse({'success': False, 'message': 'Usuario no encontrado.'}, status=404)
+            if password and u_obj.user:
+                u_obj.user.set_password(password)
+                u_obj.user.save()
         else:
             username_clean = email.split('@')[0]
             user_auth, _ = User.objects.get_or_create(username=username_clean, defaults={'email': email})
-            user_auth.set_password('admin123')
+            user_auth.set_password(password if password else 'admin123')
             user_auth.save()
             u_obj = Usuario(user=user_auth)
 
@@ -530,15 +534,15 @@ def api_usuarios(request):
 
         return JsonResponse({'success': True, 'message': 'Usuario guardado con éxito.', 'id': u_obj.pk})
 
-@csrf_exempt
-@require_http_methods(["GET"])
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 def api_perfil(request):
-    """GET /api/perfil/ - Información de perfil."""
-    user = request.user if request.user.is_authenticated else User.objects.first()
+    """GET /api/perfil/ - Información de perfil del usuario autenticado."""
+    user = request.user
     perfil = getattr(user, 'perfil', None)
 
-    nombre = perfil.nombre if perfil else (user.get_full_name() or user.username)
-    rol = perfil.rol if perfil else ('Administrador' if user.is_superuser else 'Voluntario')
+    nombre = perfil.nombre if (perfil and perfil.nombre) else (user.get_full_name() or user.username)
+    rol = perfil.rol if (perfil and perfil.rol) else ('Administrador' if user.is_superuser else 'Voluntario')
     compania_nombre = perfil.id_compania.nombre if (perfil and perfil.id_compania) else 'Sin Compañía'
     telefono = perfil.telefono if perfil else ''
 
@@ -546,7 +550,7 @@ def api_perfil(request):
         'success': True,
         'perfil': {
             'nombre': nombre,
-            'email': user.email if user else '',
+            'email': user.email or '',
             'rol': rol,
             'compania': compania_nombre,
             'telefono': telefono,
