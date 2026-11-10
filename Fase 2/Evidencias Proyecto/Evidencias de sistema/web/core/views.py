@@ -256,7 +256,7 @@ def vehidetalle(request, vehiculo_id):
     }
     return render(request, 'core/detalle.html', context)
 
-
+@login_required(login_url='index')
 def cambiar_estado(request, id_vehi):
     perfil_usuario, current_user_data = _datos_usuario_actual(request)
     
@@ -267,13 +267,19 @@ def cambiar_estado(request, id_vehi):
 
     vehiculo = get_object_or_404(Vehiculo, pk=id_vehi)
     hoy = timezone.localdate()
+    
+    # Actualizar estado del vehículo
     vehiculo.estado = 'operativo'
     if not vehiculo.proxima_mantencion or vehiculo.proxima_mantencion <= hoy:
         vehiculo.proxima_mantencion = hoy + timezone.timedelta(days=90)
     vehiculo.save()
     
+    # 🔄 NUEVO: Actualizar el estado de todas las mantenciones ligadas a este vehículo a "completada"
+    Mantencion.objects.filter(id_vehi=vehiculo).update(estado='completada')
+    
     # Redirige usando el argumento posicional o vehiculo_id=id_vehi
     return redirect('vehidetalle', vehiculo_id=id_vehi)
+
 
 @login_required(login_url='index')
 def registrar(request):
