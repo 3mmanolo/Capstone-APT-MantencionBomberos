@@ -15,6 +15,7 @@ from django.contrib import messages
 from .models import Vehiculo, Usuario, Compania, Mantencion, TipoMantencion, Insumo, MantencionInsu
 import json
 from django.utils.safestring import mark_safe
+from django_ratelimit.decorators import ratelimit
 
 
 from django.urls import path
@@ -41,6 +42,7 @@ from django.utils import timezone
 
 User = get_user_model()
 
+@ratelimit(key='ip', rate='5/m', method='POST', block=False)
 def index(request):
     # Si el usuario hace clic en "Volver al login", limpiamos el estado 2FA en sesión
     if request.GET.get('reset') == '1':
@@ -87,6 +89,13 @@ def index(request):
             esperando_2fa = False
 
     if request.method == 'POST':
+        if getattr(request, 'limited', False):
+            return render(request, 'core/index.html', {
+                'error': 'Demasiados intentos. Espera un minuto e inténtalo de nuevo.',
+                'info_message': None,
+                'esperando_2fa': esperando_2fa
+            })
+
         accion = request.POST.get('accion')
 
         # CASO 1: Reenviar código

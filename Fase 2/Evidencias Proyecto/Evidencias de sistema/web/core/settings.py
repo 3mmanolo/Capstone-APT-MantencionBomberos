@@ -8,18 +8,28 @@ from pathlib import Path
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
-
+import os
+from dotenv import load_dotenv
+load_dotenv(BASE_DIR / '.env')
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = 'django-insecure-p5=wcenru#8vjdlhelrvnn%hepggw%bgive!$-1wm8@lc^$3+1'
+SECRET_KEY = os.getenv('SECRET_KEY')
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = True
+DEBUG = os.getenv('DEBUG', 'False') == 'True'
 #desactivar en fase de produccion
 
 # Permitir conexiones desde cualquier origen / IP (ideal para Docker y dispositivos móviles)
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 
+# Seguridad para producción: solo se activa cuando DEBUG=False (requiere HTTPS)
+if not DEBUG:
+    SECURE_SSL_REDIRECT = True              # redirige todo el tráfico a HTTPS
+    SECURE_HSTS_SECONDS = 31536000          # HSTS: fuerza HTTPS por 1 año
+    SECURE_HSTS_INCLUDE_SUBDOMAINS = True
+    SECURE_HSTS_PRELOAD = True
+    SESSION_COOKIE_SECURE = True            # cookie de sesión solo por HTTPS
+    CSRF_COOKIE_SECURE = True               # cookie CSRF solo por HTTPS
 
 # Application definition
 
@@ -47,8 +57,6 @@ REST_FRAMEWORK = {
     ],
 }
 
-# En desarrollo local con http://localhost:8000 debe estar en False
-CSRF_COOKIE_SECURE = False
 
 MIDDLEWARE = [
     'corsheaders.middleware.CorsMiddleware',  # Debe ir lo más arriba posible
@@ -137,7 +145,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 
 # Durante la fase de desarrollo, permite peticiones desde cualquier origen (app móvil, emuladores, etc.)
-CORS_ALLOW_ALL_ORIGINS = True
+CORS_ALLOWED_ORIGINS = os.getenv('CORS_ALLOWED_ORIGINS', 'http://localhost:8000,http://127.0.0.1:8000').split(',')
 
 # Habilitar el envío de credenciales o tokens en los headers
 CORS_ALLOW_CREDENTIALS = True
@@ -149,6 +157,7 @@ EMAIL_BACKEND = 'django.core.mail.backends.smtp.EmailBackend'
 EMAIL_HOST = 'smtp.gmail.com'  # O el servidor SMTP que utilicen
 EMAIL_PORT = 587
 EMAIL_USE_TLS = True
-EMAIL_HOST_USER = 'emma.exmx@gmail.com'
-EMAIL_HOST_PASSWORD = 'ghmsrvsyctrjyxro'
+EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER')
+EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD')
 DEFAULT_FROM_EMAIL = 'Sistema Bomberos <emma.exmx@gmail.com>'
+

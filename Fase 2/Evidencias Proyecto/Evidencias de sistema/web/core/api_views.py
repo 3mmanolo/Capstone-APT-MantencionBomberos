@@ -20,6 +20,7 @@ from rest_framework import status
 
 from .models import Vehiculo, Usuario, Compania, Mantencion, TipoMantencion, Insumo, MantencionInsu
 from .views import _estado_visual_vehiculo
+from django_ratelimit.decorators import ratelimit
 
 def _get_json_body(request):
     try:
@@ -48,8 +49,11 @@ from django.conf import settings
 
 @csrf_exempt
 @require_http_methods(["POST"])
+@ratelimit(key='ip', rate='5/m', method='POST', block=False)
 def api_login(request):
     """POST /api/login/ - Autentica credenciales y envía código 2FA por correo."""
+    if getattr(request, 'limited', False):
+        return JsonResponse({'success': False, 'message': 'Demasiados intentos de inicio de sesión. Espera un minuto e inténtalo de nuevo.'}, status=429)
     data = _get_json_body(request)
     username_input = data.get('username') or data.get('email', '')
     password_input = data.get('password', '')
@@ -195,8 +199,9 @@ def api_reenviar_2fa(request):
 
 
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 @csrf_exempt
-@require_http_methods(["GET"])
 def api_dashboard(request):
     """GET /api/dashboard/ - Retorna métricas y lista de la flota para la app Android."""
     hoy = timezone.localdate()
@@ -333,8 +338,9 @@ def api_vehiculos(request):
         except Exception as e:
             return JsonResponse({'success': False, 'message': f'Error al guardar vehículo: {str(e)}'}, status=400)
 
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated])
 @csrf_exempt
-@require_http_methods(["DELETE"])
 def api_vehiculo_eliminar(request, vehiculo_id):
     """DELETE /api/vehiculos/<id>/ - Eliminar vehículo."""
     v_obj = Vehiculo.objects.filter(pk=vehiculo_id).first()
@@ -343,8 +349,9 @@ def api_vehiculo_eliminar(request, vehiculo_id):
     v_obj.delete()
     return JsonResponse({'success': True, 'message': 'Vehículo eliminado correctamente.'})
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
 @csrf_exempt
-@require_http_methods(["POST"])
 def api_registrar_mantencion(request):
     """POST /api/registrar-mantencion/ - Registrar una mantención desde la app."""
     data = _get_json_body(request)
@@ -387,8 +394,9 @@ def api_registrar_mantencion(request):
 
     return JsonResponse({'success': True, 'message': 'Mantención registrada exitosamente.', 'id': mantencion_obj.pk})
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 @csrf_exempt
-@require_http_methods(["GET"])
 def api_historial(request):
     """GET /api/historial/ - Retorna resumen de registros por vehículo."""
     vehiculos_annotated = Vehiculo.objects.select_related('id_compania').annotate(
@@ -412,8 +420,9 @@ def api_historial(request):
 
     return JsonResponse({'success': True, 'historial': items})
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 @csrf_exempt
-@require_http_methods(["GET"])
 def api_historial_detalle(request, vehiculo_id):
     """GET /api/historial/<id>/ - Retorna lista detallada de mantenciones de un vehículo."""
     v_obj = Vehiculo.objects.filter(pk=vehiculo_id).first()
@@ -444,8 +453,9 @@ def api_historial_detalle(request, vehiculo_id):
         'logs': logs
     })
 
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
 @csrf_exempt
-@require_http_methods(["GET"])
 def api_notificaciones(request):
     """GET /api/notificaciones/ - Retorna alertas y notificaciones del sistema."""
     hoy = timezone.localdate()
@@ -473,8 +483,9 @@ def api_notificaciones(request):
 
     return JsonResponse({'success': True, 'notificaciones': notificaciones})
 
+@api_view(["GET", "POST"])
+@permission_classes([IsAuthenticated])
 @csrf_exempt
-@require_http_methods(["GET", "POST"])
 def api_usuarios(request):
     """GET/POST /api/usuarios/ - Lista y gestión de usuarios."""
     if request.method == "GET":
@@ -558,8 +569,9 @@ def api_perfil(request):
         }
     })
 
+@api_view(["POST"])
+@permission_classes([IsAuthenticated])
 @csrf_exempt
-@require_http_methods(["POST"])
 def api_vehiculo_operativo(request, vehiculo_id):
     """POST /api/vehiculos/<id>/operativo/ - Marca el vehículo como operativo."""
     v_obj = Vehiculo.objects.filter(pk=vehiculo_id).first()
@@ -574,6 +586,8 @@ def api_vehiculo_operativo(request, vehiculo_id):
 
     v_obj.save()
     return JsonResponse({'success': True, 'message': 'Marcado como operativo exitosamente.'})
+
+
 
 
 @api_view(["GET"])

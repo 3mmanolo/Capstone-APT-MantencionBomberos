@@ -1,0 +1,15 @@
+# Credenciales y secretos
+.env
+*.env
+
+# Base de datos
+db.sqlite3
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Reportes
+bandit_report.json

@@ -6,3 +6,4 @@ django-cors-headers
 
 
 reportlab==4.1.0
+django-ratelimit>=4.1
