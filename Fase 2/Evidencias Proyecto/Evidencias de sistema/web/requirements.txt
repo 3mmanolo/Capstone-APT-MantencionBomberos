@@ -3,3 +3,6 @@ psycopg2-binary>=2.9
 python-dotenv>=1.0
 djangorestframework
 django-cors-headers
+
+
+reportlab==4.1.0

@@ -31,6 +31,9 @@ urlpatterns = [
     path('detalle/<int:vehiculo_id>/', views.detalle, name='detalle'),
     path('vehidetalle/<int:vehiculo_id>/', views.vehidetalle, name='vehidetalle'),
     path('vehiculo/<int:id_vehi>/operativo/', views.cambiar_estado, name='cambiar_estado'),
+# ... tus otras rutas ...
+    path('vehiculo/<int:id_vehi>/pdf/', views.descargar_pdf_vehiculo, name='descargar_pdf_vehiculo'),
+
 
     # Endpoints API REST para la aplicación móvil Android
     path('api/login/', api_views.api_login, name='api_login'),

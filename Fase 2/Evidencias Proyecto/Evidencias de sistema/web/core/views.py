@@ -708,3 +708,132 @@ def usuarios(request):
     }
 
     return render(request, 'core/usuarios.html', context)
+
+
+
+
+
+import io
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404
+from django.contrib.auth.decorators import login_required
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
+from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
+from .models import Vehiculo, Mantencion  # Ajusta según el nombre exacto de tus modelos
+
+@login_required(login_url='index')
+def descargar_pdf_vehiculo(request, id_vehi):
+    # 1. Obtener vehículo y sus mantenciones
+    vehiculo = get_object_or_404(Vehiculo, pk=id_vehi)
+    mantenciones = Mantencion.objects.filter(id_vehi=vehiculo).order_by('fecha_ter')  # Ajusta la relación según tu modelo
+
+    # 2. Configurar la respuesta HTTP como PDF
+    response = HttpResponse(content_type='application/pdf')
+    filename = f"Informe_{vehiculo.modelo if hasattr(vehiculo, 'modelo') else vehiculo_modelo}_{vehiculo.patente if hasattr(vehiculo, 'patente') else vehiculo_id}.pdf"
+    response['Content-Disposition'] = f'attachment; filename="{filename}"'
+
+    # 3. Crear buffer y documento ReportLab
+    buffer = io.BytesIO()
+    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
+    story = []
+
+    # Estilos
+    styles = getSampleStyleSheet()
+    title_style = ParagraphStyle(
+        'DocTitle',
+        parent=styles['Heading1'],
+        fontSize=18,
+        leading=22,
+        textColor=colors.HexColor("#b91c1c"), # Color rojo institucional
+        fontName="Helvetica-Bold",
+        spaceAfter=6
+    )
+    subtitle_style = ParagraphStyle(
+        'DocSub',
+        parent=styles['Normal'],
+        fontSize=10,
+        textColor=colors.HexColor("#666666"),
+        spaceAfter=15
+    )
+    h2_style = ParagraphStyle(
+        'Heading2',
+        parent=styles['Heading2'],
+        fontSize=13,
+        textColor=colors.HexColor("#111827"),
+        spaceBefore=12,
+        spaceAfter=8,
+        fontName="Helvetica-Bold"
+    )
+
+    # Header / Título del PDF
+    nombre_vehiculo = getattr(vehiculo, 'nombre', str(vehiculo))
+    patente = getattr(vehiculo, 'patente', 'Sin patente')
+    story.append(Paragraph(f"Informe Técnico de Vehículo: {nombre_vehiculo}", title_style))
+    story.append(Paragraph(f"Patente: {patente} | Ficha oficial de flota - Bomberos Talcahuano", subtitle_style))
+
+    # --- RESUMEN Y DATOS DEL VEHÍCULO ---
+    story.append(Paragraph("Resumen del Vehículo", h2_style))
+    
+    # Calcular métricas simples de resumen
+    total_mantenciones = mantenciones.count()
+    costo_total = sum(getattr(m, 'costo', 0) or 0 for m in mantenciones)
+
+    datos_resumen = [
+        ["Tipo de Vehículo:", getattr(vehiculo, 'tipo', 'Carro bomba'), "Año:", str(getattr(vehiculo, 'anio', '-'))],
+        ["Kilometraje:", f"{getattr(vehiculo, 'kilometraje', 0)} km", "Estado:", getattr(vehiculo, 'estado', 'Operativo')],
+        ["Total Mantenciones:", str(total_mantenciones), "Costo Total Acumulado:", f"${costo_total:,.0f}"]
+    ]
+
+    tabla_resumen = Table(datos_resumen, colWidths=[120, 150, 130, 140])
+    tabla_resumen.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#f9fafb")),
+        ('TEXTCOLOR', (0,0), (-1,-1), colors.HexColor("#374151")),
+        ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
+        ('FONTNAME', (2,0), (2,-1), 'Helvetica-Bold'),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
+        ('TOPPADDING', (0,0), (-1,-1), 6),
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#e5e7eb")),
+    ]))
+    story.append(tabla_resumen)
+    story.append(Spacer(1, 15))
+
+    # --- HISTORIAL COMPLETO DE MANTENCIONES ---
+    story.append(Paragraph("Historial de Mantenciones", h2_style))
+
+    encabezados = ["Fecha", "Trabajo / Tipo", "Taller", "Costo", "Estado"]
+    filas_tabla = [encabezados]
+
+    for m in mantenciones:
+        fecha_ter = m.fecha_ter.strftime("%d/%m/%Y") if hasattr(m, 'fecha_ter') and m.fecha_ter else "-"
+        descripcion = getattr(m, 'descripcion', getattr(m, 'tipo', 'Mantención'))
+        taller = getattr(m, 'taller', '-') or '-'
+        costo = f"${getattr(m, 'costo', 0):,.0f}" if getattr(m, 'costo', None) else "$0"
+        estado = getattr(m, 'estado', 'Pendiente')
+
+        filas_tabla.append([fecha_ter, descripcion, taller, costo, estado])
+
+    if len(filas_tabla) == 1:
+        filas_tabla.append(["-", "Sin mantenciones registradas", "-", "-", "-"])
+
+    tabla_historial = Table(filas_tabla, colWidths=[70, 200, 110, 80, 80])
+    tabla_historial.setStyle(TableStyle([
+        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#b91c1c")),
+        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
+        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
+        ('FONTSIZE', (0,0), (-1,-1), 9),
+        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
+        ('TOPPADDING', (0,0), (-1,-1), 5),
+        ('ALIGN', (3,0), (3,-1), 'RIGHT'), # Alineación de costo a la derecha
+        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#e5e7eb")),
+        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor("#f9fafb")]),
+    ]))
+    story.append(tabla_historial)
+
+    # Construir PDF
+    doc.build(story)
+    pdf = buffer.getvalue()
+    buffer.close()
+    response.write(pdf)
+    return response
