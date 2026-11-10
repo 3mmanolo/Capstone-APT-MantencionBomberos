@@ -42,6 +42,18 @@ from django.utils import timezone
 User = get_user_model()
 
 def index(request):
+    # Si el usuario hace clic en "Volver al login", limpiamos el estado 2FA en sesión
+    if request.GET.get('reset') == '1':
+        if 'pre_auth_user_id' in request.session:
+            del request.session['pre_auth_user_id']
+        return redirect('index')
+
+    if request.user.is_authenticated:
+        return redirect('dashboard')
+
+
+
+
     if request.user.is_authenticated:
         return redirect('dashboard')
 
