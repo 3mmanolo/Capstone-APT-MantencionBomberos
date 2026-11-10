@@ -12,8 +12,8 @@ object RetrofitClient {
 
     private const val PREFS_NAME = "retrofit_prefs"
     private const val KEY_SERVER_URL = "server_url"
-    const val DEFAULT_EMULATOR_URL = "http://10.0.2.2:8080/"
-    const val DEFAULT_LOCAL_URL = "http://10.202.157.203:8080/"
+    const val DEFAULT_EMULATOR_URL = "http://10.0.2.2:8000/"
+    const val DEFAULT_LOCAL_URL = "http://10.180.85.203:8000/"
 
     private var sharedPreferences: SharedPreferences? = null
 
@@ -28,11 +28,11 @@ object RetrofitClient {
         sharedPreferences = prefs
         val savedUrl = prefs.getString(KEY_SERVER_URL, null)
         val initialUrl = when {
-            !savedUrl.isNullOrBlank() -> savedUrl
+            !savedUrl.isNullOrBlank() && !savedUrl.contains("10.202.157.203") && !savedUrl.contains("10.0.2.2") && !savedUrl.contains(":8080") -> savedUrl
             isEmulator() -> DEFAULT_EMULATOR_URL
             else -> DEFAULT_LOCAL_URL
         }
-        updateBaseUrl(initialUrl, saveToPrefs = false)
+        updateBaseUrl(initialUrl, saveToPrefs = true)
     }
 
     fun updateBaseUrl(newUrl: String, saveToPrefs: Boolean = true) {

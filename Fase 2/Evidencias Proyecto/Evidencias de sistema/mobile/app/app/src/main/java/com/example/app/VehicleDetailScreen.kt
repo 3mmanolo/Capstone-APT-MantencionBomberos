@@ -1,5 +1,9 @@
 package com.example.app
 
+import android.Manifest
+import android.content.pm.PackageManager
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -36,11 +40,13 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import com.example.app.network.RetrofitClient
 import com.example.app.ui.theme.AppTheme
 import com.example.app.ui.theme.BomberosBackground
@@ -64,11 +70,31 @@ fun VehicleDetailScreen(
     onRegistrarMantencionClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     var showConfirmDialog by remember { mutableStateOf(false) }
     var showSuccessDialog by remember { mutableStateOf(false) }
     var isLoading by remember { mutableStateOf(false) }
+    var isDownloadingPdf by remember { mutableStateOf(false) }
+    var showPdfResultDialog by remember { mutableStateOf(false) }
+    var pdfResultMessage by remember { mutableStateOf("") }
 
     val coroutineScope = rememberCoroutineScope()
+
+    val permissionLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.RequestPermission()
+    ) { isGranted ->
+        if (isGranted) {
+            downloadPdf(realVehicleId, patente, context) { msg ->
+                pdfResultMessage = msg
+                showPdfResultDialog = true
+                isDownloadingPdf = false
+            }
+        } else {
+            isDownloadingPdf = false
+            pdfResultMessage = "Permiso de almacenamiento denegado. No se puede guardar el PDF."
+            showPdfResultDialog = true
+        }
+    }
 
     // Diálogo 1: Confirmación
     if (showConfirmDialog) {
@@ -137,6 +163,25 @@ fun VehicleDetailScreen(
                     colors = ButtonDefaults.buttonColors(containerColor = StatusGreen)
                 ) {
                     Text("Confirmar", color = Color.White, fontWeight = FontWeight.Bold)
+                }
+            },
+            containerColor = MaterialTheme.colorScheme.surface,
+            shape = RoundedCornerShape(16.dp)
+        )
+    }
+
+    // Diálogo 3: Resultado Descarga PDF
+    if (showPdfResultDialog) {
+        AlertDialog(
+            onDismissRequest = { showPdfResultDialog = false },
+            title = { Text(text = "Informe PDF", fontWeight = FontWeight.Bold) },
+            text = { Text(text = pdfResultMessage) },
+            confirmButton = {
+                Button(
+                    onClick = { showPdfResultDialog = false },
+                    colors = ButtonDefaults.buttonColors(containerColor = BomberosRed)
+                ) {
+                    Text("Aceptar", color = Color.White, fontWeight = FontWeight.Bold)
                 }
             },
             containerColor = MaterialTheme.colorScheme.surface,
@@ -262,6 +307,36 @@ fun VehicleDetailScreen(
                     ) {
                         Text(text = "Marcar como operativo", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                     }
+
+                    Button(
+                        onClick = {
+                            isDownloadingPdf = true
+                            if (android.os.Build.VERSION.SDK_INT <= 28 &&
+                                ContextCompat.checkSelfPermission(
+                                    context,
+                                    Manifest.permission.WRITE_EXTERNAL_STORAGE
+                                ) != PackageManager.PERMISSION_GRANTED
+                            ) {
+                                permissionLauncher.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                            } else {
+                                downloadPdf(realVehicleId, patente, context) { msg ->
+                                    pdfResultMessage = msg
+                                    showPdfResultDialog = true
+                                    isDownloadingPdf = false
+                                }
+                            }
+                        },
+                        shape = RoundedCornerShape(12.dp),
+                        colors = ButtonDefaults.buttonColors(containerColor = BomberosRed, contentColor = Color.White),
+                        enabled = !isDownloadingPdf,
+                        modifier = Modifier.fillMaxWidth().height(50.dp)
+                    ) {
+                        if (isDownloadingPdf) {
+                            CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
+                        } else {
+                            Text(text = "Descargar Informe PDF", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        }
+                    }
                 }
             }
         }
@@ -300,5 +375,54 @@ fun VehicleDetailScreenPreview() {
             onVerHistorialClick = {},
             onRegistrarMantencionClick = {}
         )
+    }
+}
+
+fun downloadPdf(realVehicleId: Int, patente: String, context: android.content.Context, onResult: (String) -> Unit) {
+    kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+        try {
+            val response = RetrofitClient.apiService.descargarPdfVehiculo(realVehicleId)
+            if (response.isSuccessful && response.body() != null) {
+                val body = response.body()!!
+                val fileName = "Informe_${patente}_${System.currentTimeMillis()}.pdf"
+                
+                if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
+                    val resolver = context.contentResolver
+                    val contentValues = android.content.ContentValues().apply {
+                        put(android.provider.MediaStore.MediaColumns.DISPLAY_NAME, fileName)
+                        put(android.provider.MediaStore.MediaColumns.MIME_TYPE, "application/pdf")
+                        put(android.provider.MediaStore.MediaColumns.RELATIVE_PATH, android.os.Environment.DIRECTORY_DOWNLOADS)
+                    }
+                    val uri = resolver.insert(android.provider.MediaStore.Files.getContentUri("external"), contentValues)
+                    if (uri != null) {
+                        resolver.openOutputStream(uri)?.use { outputStream ->
+                            body.byteStream().use { inputStream ->
+                                inputStream.copyTo(outputStream)
+                            }
+                        }
+                    }
+                } else {
+                    val targetDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
+                    if (!targetDir.exists()) targetDir.mkdirs()
+                    val targetFile = java.io.File(targetDir, fileName)
+                    targetFile.outputStream().use { outputStream ->
+                        body.byteStream().use { inputStream ->
+                            inputStream.copyTo(outputStream)
+                        }
+                    }
+                }
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    onResult("PDF descargado exitosamente en la carpeta Descargas.")
+                }
+            } else {
+                kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                    onResult("Error al generar el PDF (Código: ${response.code()})")
+                }
+            }
+        } catch (e: Exception) {
+            kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
+                onResult("Error de red: ${e.localizedMessage}")
+            }
+        }
     }
 }

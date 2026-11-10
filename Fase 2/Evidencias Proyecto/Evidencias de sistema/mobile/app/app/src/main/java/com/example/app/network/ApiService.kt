@@ -53,4 +53,8 @@ interface ApiService {
 
     @POST("api/vehiculos/{id}/operativo/")
     suspend fun cambiarEstadoOperativo(@Path("id") id: Int): Response<GenericResponse>
+
+    @GET("api/vehiculos/{id}/pdf/")
+    @retrofit2.http.Streaming
+    suspend fun descargarPdfVehiculo(@Path("id") id: Int): Response<okhttp3.ResponseBody>
 }

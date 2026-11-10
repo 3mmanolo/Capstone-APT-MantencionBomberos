@@ -68,9 +68,9 @@ val copyApkTask = tasks.register("copyApkToDesktop") {
         val desktopFolder = File(System.getProperty("user.home"), "OneDrive/Desktop").takeIf { it.exists() }
             ?: File(System.getProperty("user.home"), "Desktop")
         if (apkFile.exists() && desktopFolder.exists()) {
-            val targetFile = File(desktopFolder, "app-debug.apk")
+            val targetFile = File(desktopFolder, "app-mantencion-bomberos-pdf-perms-debug.apk")
             apkFile.copyTo(targetFile, overwrite = true)
-            println("APK copiada automáticamente al Escritorio: ${targetFile.absolutePath}")
+            println("APK copiada automáticamente al Escritorio con permisos: ${targetFile.absolutePath}")
         }
     }
 }

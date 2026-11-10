@@ -49,4 +49,5 @@ urlpatterns = [
     path('api/usuarios/', api_views.api_usuarios, name='api_usuarios'),
     path('api/perfil/', api_views.api_perfil, name='api_perfil'),
     path('api/vehiculos/<int:vehiculo_id>/operativo/', api_views.api_vehiculo_operativo, name='api_vehiculo_operativo'),
+    path('api/vehiculos/<int:vehiculo_id>/pdf/', api_views.api_vehiculo_pdf, name='api_vehiculo_pdf'),
 ]
