@@ -100,7 +100,7 @@ def api_login(request):
     return JsonResponse({
         'success': True,
         'requires_2fa': True,
-        'message': f'Credenciales correctas. Código 2FA enviado (o generado en BD): {codigo_aleatorio}',
+        'message': 'Credenciales correctas. Te enviamos un código de verificación a tu correo.',
         'user_id': user.pk
     })
 
