@@ -22,8 +22,11 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 # Permitir conexiones desde cualquier origen / IP (ideal para Docker y dispositivos móviles)
 ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 
-# Seguridad para producción: solo se activa cuando DEBUG=False (requiere HTTPS)
-if not DEBUG:
+# Endurecimiento HTTPS: solo en producción real tras HTTPS (nginx/gunicorn).
+# Se activa con la variable SECURE_SSL=True, NO por DEBUG, para no romper
+# entornos que corren sobre HTTP (dev local, Docker con runserver).
+SECURE_SSL = os.getenv('SECURE_SSL', 'False') == 'True'
+if SECURE_SSL:
     SECURE_SSL_REDIRECT = True              # redirige todo el tráfico a HTTPS
     SECURE_HSTS_SECONDS = 31536000          # HSTS: fuerza HTTPS por 1 año
     SECURE_HSTS_INCLUDE_SUBDOMAINS = True
