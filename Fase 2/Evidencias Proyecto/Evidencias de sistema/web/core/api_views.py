@@ -578,13 +578,12 @@ def api_vehiculo_operativo(request, vehiculo_id):
     if not v_obj:
         return JsonResponse({'success': False, 'message': 'Vehículo no encontrado.'}, status=404)
 
-    hoy = timezone.localdate()
     v_obj.estado = 'operativo'
-    # Extender la fecha de próxima mantención a 90 días en el futuro para asegurar estado verde (Operativo)
-    if not v_obj.proxima_mantencion or v_obj.proxima_mantencion <= hoy:
-        v_obj.proxima_mantencion = hoy + timezone.timedelta(days=90)
-
     v_obj.save()
+
+    # 🔄 Actualizar el estado de todas las mantenciones ligadas a este vehículo a "completada"
+    Mantencion.objects.filter(id_vehi=v_obj).update(estado='completada')
+
     return JsonResponse({'success': True, 'message': 'Marcado como operativo exitosamente.'})
 
 
