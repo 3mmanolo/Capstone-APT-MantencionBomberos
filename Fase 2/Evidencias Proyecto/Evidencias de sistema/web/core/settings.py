@@ -19,8 +19,9 @@ SECRET_KEY = os.getenv('SECRET_KEY')
 DEBUG = os.getenv('DEBUG', 'False') == 'True'
 #desactivar en fase de produccion
 
-# Permitir conexiones desde cualquier origen / IP (ideal para Docker y dispositivos móviles)
-ALLOWED_HOSTS = ['*']
+# Hosts permitidos: se definen en el .env (ALLOWED_HOSTS=127.0.0.1,localhost,10.0.2.2,...).
+# No usar '*': desactiva la protección de Django contra ataques de encabezado Host.
+ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
 
 # Endurecimiento HTTPS: solo en producción real tras HTTPS (nginx/gunicorn).
 # Se activa con la variable SECURE_SSL=True, NO por DEBUG, para no romper
