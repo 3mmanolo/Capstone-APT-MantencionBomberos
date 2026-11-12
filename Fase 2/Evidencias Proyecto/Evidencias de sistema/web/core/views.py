@@ -283,12 +283,9 @@ def cambiar_estado(request, id_vehi):
         return redirect('dashboard')
 
     vehiculo = get_object_or_404(Vehiculo, pk=id_vehi)
-    hoy = timezone.localdate()
-    
-    # Actualizar estado del vehículo
+
+    # Actualizar estado del vehículo a operativo sin modificar arbitrariamente la fecha
     vehiculo.estado = 'operativo'
-    if not vehiculo.proxima_mantencion or vehiculo.proxima_mantencion <= hoy:
-        vehiculo.proxima_mantencion = hoy + timezone.timedelta(days=90)
     vehiculo.save()
     
     # 🔄 NUEVO: Actualizar el estado de todas las mantenciones ligadas a este vehículo a "completada"
@@ -425,6 +422,8 @@ def _estado_visual_vehiculo(vehiculo, hoy):
     dias = (vehiculo.proxima_mantencion - hoy).days
     if dias < 0:
         return {'status': 'danger', 'label': 'Mantención vencida'}
+    if (vehiculo.estado or '').strip().lower() == 'operativo':
+        return {'status': 'green', 'label': 'Operativo'}
     if dias <= DIAS_ALERTA_VEHICULO:
         label = 'Vence hoy' if dias == 0 else f"Vence en {dias} día{'s' if dias != 1 else ''}"
         return {'status': 'amber', 'label': label}

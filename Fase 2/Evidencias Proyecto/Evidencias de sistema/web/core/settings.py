@@ -20,7 +20,7 @@ DEBUG = os.getenv('DEBUG', 'False') == 'True'
 #desactivar en fase de produccion
 
 # Permitir conexiones desde cualquier origen / IP (ideal para Docker y dispositivos móviles)
-ALLOWED_HOSTS = os.getenv('ALLOWED_HOSTS', '127.0.0.1,localhost').split(',')
+ALLOWED_HOSTS = ['*']
 
 # Endurecimiento HTTPS: solo en producción real tras HTTPS (nginx/gunicorn).
 # Se activa con la variable SECURE_SSL=True, NO por DEBUG, para no romper
