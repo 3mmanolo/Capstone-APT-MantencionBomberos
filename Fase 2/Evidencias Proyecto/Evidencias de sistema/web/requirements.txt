@@ -1,9 +1,8 @@
-Django>=4.2,<5.0
-psycopg2-binary>=2.9
-python-dotenv>=1.0
-djangorestframework
-django-cors-headers
-
-
+# Versiones fijadas (probadas el 12/11/2026). Actualizar solo tras correr pip-audit y las pruebas.
+Django==5.2.17
+djangorestframework==3.18.2
+django-cors-headers==4.9.0
+django-ratelimit==4.1.0
+python-dotenv==1.2.4
+psycopg2-binary==2.9.13
 reportlab==4.1.0
-django-ratelimit>=4.1
