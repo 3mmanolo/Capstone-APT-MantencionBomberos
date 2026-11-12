@@ -97,9 +97,12 @@
         Ver historial completo
     </a>
     
-    <a class="btn-secondary" style="width:100%; height:42px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; border: 1px solid #0f766e; color: #0f766e; text-decoration:none;" href="{% url 'cambiar_estado' vehiculo.id_vehi %}">
-        Marcar como operativo
-    </a>
+    <form method="post" action="{% url 'cambiar_estado' vehiculo.id_vehi %}" style="margin:0;">
+        {% csrf_token %}
+        <button type="submit" class="btn-secondary" style="width:100%; height:42px; margin-bottom:10px; display:flex; align-items:center; justify-content:center; border: 1px solid #0f766e; color: #0f766e; background:transparent; cursor:pointer;">
+            Marcar como operativo
+        </button>
+    </form>
 
     <!-- NUEVO BOTÓN PARA DESCARGAR PDF (Alineado con margin-bottom y height idénticos) -->
     <a href="{% url 'descargar_pdf_vehiculo' vehiculo.pk %}" target="_blank" class="btn-secondary" style="width:100%; height:42px; margin-bottom:0; display:flex; align-items:center; justify-content:center; gap:8px; text-decoration:none; border:1px solid #b91c1c; color:#b91c1c; background: transparent; border-radius:6px; font-weight:600;">

@@ -1,6 +1,8 @@
 import json
 import re
 import datetime
+import logging
+logger = logging.getLogger(__name__)
 from decimal import Decimal, InvalidOperation
 from django.http import JsonResponse
 from django.views.decorators.csrf import csrf_exempt
@@ -10,6 +12,8 @@ from django.contrib.auth.models import User
 from django.utils import timezone
 from django.db import transaction
 from django.db.models import Count
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 
 #importaciones de permisos api
 from rest_framework.decorators import api_view, permission_classes
@@ -19,7 +23,8 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Vehiculo, Usuario, Compania, Mantencion, TipoMantencion, Insumo, MantencionInsu
-from .views import _estado_visual_vehiculo
+from .views import _estado_visual_vehiculo, ROLES_USUARIO
+from .permissions import EsAdministrador, GestionaFlota, LecturaOAdministrador
 from django_ratelimit.decorators import ratelimit
 
 def _get_json_body(request):
@@ -43,7 +48,7 @@ def _parse_date_safe(date_str):
             pass
     return timezone.localdate() + timezone.timedelta(days=90)
 
-import random
+import secrets
 from django.core.mail import send_mail
 from django.conf import settings
 
@@ -76,7 +81,7 @@ def api_login(request):
         return JsonResponse({'success': False, 'message': 'El usuario no tiene un perfil asociado.'}, status=400)
 
     # --- NUEVO: Generar y enviar código 2FA por correo ---
-    codigo_aleatorio = f"{random.randint(100000, 999999)}"
+    codigo_aleatorio = f"{secrets.randbelow(900000) + 100000}"
     
     # Guardar el código y su expiración (5 minutos) en el perfil del usuario
     perfil.codigo_2fa = codigo_aleatorio
@@ -107,6 +112,7 @@ def api_login(request):
 
 @csrf_exempt
 @require_http_methods(["POST"])
+@ratelimit(key='ip', rate='5/m', method='POST', block=True)
 def api_verificar_2fa(request):
     """POST /api/verify-2fa/ - Verifica el código de 6 dígitos enviado al correo."""
     data = _get_json_body(request)
@@ -161,11 +167,13 @@ def api_verificar_2fa(request):
         else:
             return JsonResponse({'success': False, 'message': 'Código de verificación incorrecto.'}, status=400)
     except Exception as e:
-        return JsonResponse({'success': False, 'message': f'Error al validar código: {str(e)}'}, status=500)
+        logger.exception('Error al validar código 2FA')
+        return JsonResponse({'success': False, 'message': 'No se pudo validar el código. Inténtalo de nuevo.'}, status=500)
 
 
 @csrf_exempt
 @require_http_methods(["POST"])
+@ratelimit(key='ip', rate='3/m', method='POST', block=True)
 def api_reenviar_2fa(request):
     """POST /api/reenviar-2fa/ - Genera y reenvía un nuevo código de 6 dígitos."""
     data = _get_json_body(request)
@@ -178,7 +186,7 @@ def api_reenviar_2fa(request):
         user = User.objects.get(pk=user_id)
         perfil = getattr(user, 'perfil', None)
         if perfil:
-            codigo_aleatorio = f"{random.randint(100000, 999999)}"
+            codigo_aleatorio = f"{secrets.randbelow(900000) + 100000}"
             perfil.codigo_2fa = codigo_aleatorio
             perfil.expiracion_2fa = timezone.now() + timezone.timedelta(minutes=5)
             perfil.save()
@@ -195,7 +203,8 @@ def api_reenviar_2fa(request):
         else:
             return JsonResponse({'success': False, 'message': 'El usuario no tiene perfil asociado.'}, status=400)
     except Exception as e:
-        return JsonResponse({'success': False, 'message': f'Error al reenviar el correo: {str(e)}'}, status=500)
+        logger.exception('Error al reenviar código 2FA')
+        return JsonResponse({'success': False, 'message': 'No se pudo reenviar el código. Inténtalo más tarde.'}, status=500)
 
 
 
@@ -259,7 +268,7 @@ def api_dashboard(request):
     })
 
 @api_view(["GET", "POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, LecturaOAdministrador])
 @csrf_exempt
 def api_vehiculos(request):
     """GET/POST /api/vehiculos/ - Listado o creación/edición de vehículos."""
@@ -336,10 +345,11 @@ def api_vehiculos(request):
             v_obj.save()
             return JsonResponse({'success': True, 'message': 'Vehículo guardado correctamente.', 'id': v_obj.pk})
         except Exception as e:
-            return JsonResponse({'success': False, 'message': f'Error al guardar vehículo: {str(e)}'}, status=400)
+            logger.exception('Error al guardar vehículo')
+            return JsonResponse({'success': False, 'message': 'No se pudo guardar el vehículo. Revisa los datos.'}, status=400)
 
 @api_view(["DELETE"])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, EsAdministrador])
 @csrf_exempt
 def api_vehiculo_eliminar(request, vehiculo_id):
     """DELETE /api/vehiculos/<id>/ - Eliminar vehículo."""
@@ -350,7 +360,7 @@ def api_vehiculo_eliminar(request, vehiculo_id):
     return JsonResponse({'success': True, 'message': 'Vehículo eliminado correctamente.'})
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, GestionaFlota])
 @csrf_exempt
 def api_registrar_mantencion(request):
     """POST /api/registrar-mantencion/ - Registrar una mantención desde la app."""
@@ -484,7 +494,7 @@ def api_notificaciones(request):
     return JsonResponse({'success': True, 'notificaciones': notificaciones})
 
 @api_view(["GET", "POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, EsAdministrador])
 @csrf_exempt
 def api_usuarios(request):
     """GET/POST /api/usuarios/ - Lista y gestión de usuarios."""
@@ -502,12 +512,11 @@ def api_usuarios(request):
                 'initials': ''.join([w[0].upper() for w in u.nombre.split()[:2]]) if u.nombre else 'US'
             })
         return JsonResponse({'success': True, 'usuarios': usuarios_list})
-
     elif request.method == "POST":
         data = _get_json_body(request)
         edit_id = data.get('id')
         nombre = data.get('nombre', '').strip()
-        email = data.get('email', '').strip()
+        email = data.get('email', '').strip().lower()
         rol = data.get('rol', '').strip()
         compania_id = data.get('compania_id')
         telefono = data.get('telefono', '').strip()
@@ -516,20 +525,40 @@ def api_usuarios(request):
         if not nombre or not email:
             return JsonResponse({'success': False, 'message': 'Nombre y correo son requeridos.'}, status=400)
 
+        # El rol debe ser uno de los definidos en el sistema
+        if rol and rol not in ROLES_USUARIO:
+            return JsonResponse({'success': False, 'message': 'Rol no válido.'}, status=400)
+
         compania_obj = Compania.objects.filter(pk=compania_id).first() if compania_id else None
 
         if edit_id:
+            # --- EDICIÓN de un usuario existente ---
             u_obj = Usuario.objects.filter(pk=edit_id).first()
             if not u_obj:
                 return JsonResponse({'success': False, 'message': 'Usuario no encontrado.'}, status=404)
+            # No permitir asignar el correo de otro usuario
+            if u_obj.user and User.objects.filter(email__iexact=email).exclude(pk=u_obj.user.pk).exists():
+                return JsonResponse({'success': False, 'message': 'Ya existe otro usuario con ese correo.'}, status=400)
             if password and u_obj.user:
+                try:
+                    validate_password(password, user=u_obj.user)
+                except ValidationError as e:
+                    return JsonResponse({'success': False, 'message': ' '.join(e.messages)}, status=400)
                 u_obj.user.set_password(password)
                 u_obj.user.save()
         else:
+            # --- ALTA de un usuario nuevo: nunca reutilizar una cuenta existente ---
+            if not password:
+                return JsonResponse({'success': False, 'message': 'La contraseña es obligatoria.'}, status=400)
             username_clean = email.split('@')[0]
-            user_auth, _ = User.objects.get_or_create(username=username_clean, defaults={'email': email})
-            user_auth.set_password(password if password else 'admin123')
-            user_auth.save()
+            if (User.objects.filter(username__iexact=username_clean).exists()
+                    or User.objects.filter(email__iexact=email).exists()):
+                return JsonResponse({'success': False, 'message': 'Ya existe un usuario con ese correo.'}, status=400)
+            try:
+                validate_password(password, user=User(username=username_clean, email=email))
+            except ValidationError as e:
+                return JsonResponse({'success': False, 'message': ' '.join(e.messages)}, status=400)
+            user_auth = User.objects.create_user(username=username_clean, email=email, password=password)
             u_obj = Usuario(user=user_auth)
 
         u_obj.nombre = nombre
@@ -570,7 +599,7 @@ def api_perfil(request):
     })
 
 @api_view(["POST"])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticated, GestionaFlota])
 @csrf_exempt
 def api_vehiculo_operativo(request, vehiculo_id):
     """POST /api/vehiculos/<id>/operativo/ - Marca el vehículo como operativo."""

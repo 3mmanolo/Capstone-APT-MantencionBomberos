@@ -1,5 +1,7 @@
 # core/views.py
 import re
+import logging
+logger = logging.getLogger(__name__)
 from decimal import Decimal, InvalidOperation
 from django.db import transaction
 from django.shortcuts import render, redirect, get_object_or_404
@@ -7,6 +9,7 @@ from django.contrib.auth.models import User
 from django.db.models import Count
 from django.contrib.auth import authenticate, login, logout, authenticate, get_user_model
 from django.contrib.auth.decorators import login_required
+from django.views.decorators.http import require_POST
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
 from django.core.validators import validate_email
@@ -16,6 +19,7 @@ from .models import Vehiculo, Usuario, Compania, Mantencion, TipoMantencion, Ins
 import json
 from django.utils.safestring import mark_safe
 from django_ratelimit.decorators import ratelimit
+from .permissions import gestiona_flota
 
 
 from django.urls import path
@@ -23,7 +27,7 @@ from django.urls import path
 from rest_framework.authtoken.views import obtain_auth_token
 
 #imports api_mail y generador codigo login
-import random
+import secrets
 from django.core.mail import send_mail
 from django.conf import settings
 
@@ -34,7 +38,7 @@ urlpatterns = [
     path('api/login/', obtain_auth_token, name='api_token_auth'), # Devuelve el token al usuario móvil
 ]
 
-import random
+import secrets
 from django.core.mail import send_mail
 from django.conf import settings
 from django.utils import timezone
@@ -104,7 +108,7 @@ def index(request):
                 user = User.objects.get(pk=user_id)
                 perfil = getattr(user, 'perfil', None)
                 if perfil:
-                    codigo_aleatorio = f"{random.randint(100000, 999999)}"
+                    codigo_aleatorio = f"{secrets.randbelow(900000) + 100000}"
                     perfil.codigo_2fa = codigo_aleatorio
                     perfil.expiracion_2fa = timezone.now() + timezone.timedelta(minutes=5)
                     perfil.save()
@@ -121,7 +125,8 @@ def index(request):
                     esperando_2fa = True
                     info_message = "Se ha enviado un nuevo código a tu correo."
             except Exception as e:
-                error = f"Error al reenviar el correo: {str(e)}"
+                logger.exception('Error al reenviar código 2FA')
+                error = "No se pudo reenviar el código. Inténtalo más tarde."
                 esperando_2fa = True
 
         # CASO 2: Verificar el código ingresado
@@ -153,7 +158,8 @@ def index(request):
                     error = "Código de verificación incorrecto."
                     esperando_2fa = True
             except Exception as e:
-                error = f"Error en la validación: {str(e)}"
+                logger.exception('Error al validar código 2FA')
+                error = "No se pudo validar el código. Inicia sesión nuevamente."
                 if 'pre_auth_user_id' in request.session:
                     del request.session['pre_auth_user_id']
                 esperando_2fa = False
@@ -176,7 +182,7 @@ def index(request):
                 if user is not None:
                     perfil = getattr(user, 'perfil', None)
                     if perfil:
-                        codigo_aleatorio = f"{random.randint(100000, 999999)}"
+                        codigo_aleatorio = f"{secrets.randbelow(900000) + 100000}"
                         perfil.codigo_2fa = codigo_aleatorio
                         perfil.expiracion_2fa = timezone.now() + timezone.timedelta(minutes=5)
                         perfil.save()
@@ -194,7 +200,8 @@ def index(request):
                             request.session['pre_auth_user_id'] = user.pk
                             esperando_2fa = True
                         except Exception as e:
-                            error = f"Error al enviar el correo: {str(e)}"
+                            logger.exception('Error al enviar código 2FA')
+                            error = "No se pudo enviar el código de verificación. Inténtalo más tarde."
                     else:
                         error = "El usuario no tiene un perfil asociado."
                 else:
@@ -266,11 +273,12 @@ def vehidetalle(request, vehiculo_id):
     return render(request, 'core/detalle.html', context)
 
 @login_required(login_url='index')
+@require_POST
 def cambiar_estado(request, id_vehi):
     perfil_usuario, current_user_data = _datos_usuario_actual(request)
     
     # 🔒 Bloquear si es chofer
-    if (current_user_data.get('rol') or '').lower() == 'chofer':
+    if not gestiona_flota(request.user):
         messages.error(request, "No tienes permisos para realizar esta acción.")
         return redirect('dashboard')
 
@@ -301,7 +309,7 @@ def registrar(request):
     current_user_data['email'] = request.user.email
 
     # 🔒 Bloquear si el rol es chofer e intenta enviar datos (POST)
-    if (current_user_data.get('rol') or '').lower() == 'chofer':
+    if not gestiona_flota(request.user):
         messages.error(request, "No tienes permisos para realizar esta acción.")
         return redirect('dashboard') # O redirigir con un mensaje de error
 
@@ -599,7 +607,14 @@ def usuarios(request):
         if action == 'delete':
             user_id = request.POST.get('user_id')
             if user_id:
-                Usuario.objects.filter(pk=user_id).delete()
+                perfil = Usuario.objects.select_related('user').filter(pk=user_id).first()
+                if perfil and perfil.user_id == request.user.pk:
+                    messages.error(request, "No puedes eliminar tu propia cuenta.")
+                elif perfil and perfil.user:
+                    # Borra la cuenta de acceso: por CASCADE se borran también su perfil y su token de API
+                    perfil.user.delete()
+                elif perfil:
+                    perfil.delete()
             return redirect('usuarios')
 
         elif action == 'save':

@@ -172,6 +172,13 @@
 
 <script>
   const CURRENT_USER = JSON.parse(document.getElementById('current-user-data').textContent);
+  
+  // Escapa texto para insertarlo en HTML sin que se ejecute (anti-XSS)
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => (
+      {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+    ));
+  }
   let USERS = JSON.parse(document.getElementById('users-data').textContent);
 
   const userObj = typeof CURRENT_USER === 'string' ? JSON.parse(CURRENT_USER) : CURRENT_USER;
@@ -201,18 +208,18 @@
         roleLabel = 'Voluntario';
       }
 
-      const pillHTML = `<span style="padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; display:inline-block; ${badgeStyle}">${roleLabel}</span>`;
+      const pillHTML = `<span style="padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; display:inline-block; ${badgeStyle}">${esc(roleLabel)}</span>`;
 
       return `
         <tr>
           <td style="font-weight:600;">
             <span style="display:inline-flex; align-items:center; gap:10px;">
-              <div style="width:28px; height:28px; border-radius:50%; background:var(--red); display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:700; flex-shrink:0;">${u.initials}</div>
-              ${u.name}
+              <div style="width:28px; height:28px; border-radius:50%; background:var(--red); display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:700; flex-shrink:0;">${esc(u.initials)}</div>
+              ${esc(u.name)}
             </span>
           </td>
-          <td style="color:var(--text2);">${u.email}</td>
-          <td style="color:var(--text2);">${u.comp}</td>
+          <td style="color:var(--text2);">${esc(u.email)}</td>
+          <td style="color:var(--text2);">${esc(u.comp)}</td>
           <td>${pillHTML}</td>
           <td style="text-align:right; white-space:nowrap;">
             <svg onclick="editUser('${u.id}')" style="cursor:pointer; margin-right:14px; vertical-align:middle;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4.5-1 10-10a2 2 0 0 0-3-3l-10 10-1 4.5z"/><path d="M13 6l3 3"/></svg>

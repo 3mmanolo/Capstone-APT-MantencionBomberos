@@ -138,6 +138,12 @@
 {{ vehiculos_json|json_script:"vehiculos-data" }}
 
 <script>
+  // Escapa texto para insertarlo en HTML sin que se ejecute (anti-XSS)
+  function esc(s) {
+    return String(s ?? '').replace(/[&<>"']/g, c => (
+      {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+    ));
+  }
   const VEHICULOS = JSON.parse(document.getElementById('vehiculos-data').textContent);
 
   const tbody = document.getElementById('vehicles-body');
@@ -147,12 +153,12 @@
   function render() {
     tbody.innerHTML = VEHICULOS.map(v => `
       <tr>
-        <td style="font-weight:600;">${v.modelo}</td>
-        <td style="color:var(--text2);">${v.patente}</td>
-        <td style="color:var(--text2);">${v.compania}</td>
-        <td style="color:var(--text2);">${v.tipo_v}</td>
-        <td style="color:var(--text2);">${v.anio}</td>
-        <td><span class="pill pill-${v.badge_status}">${v.badge_label}</span></td>
+        <td style="font-weight:600;">${esc(v.modelo)}</td>
+        <td style="color:var(--text2);">${esc(v.patente)}</td>
+        <td style="color:var(--text2);">${esc(v.compania)}</td>
+        <td style="color:var(--text2);">${esc(v.tipo_v)}</td>
+        <td style="color:var(--text2);">${esc(v.anio)}</td>
+        <td><span class="pill pill-${esc(v.badge_status)}">${esc(v.badge_label)}</span></td>
         <td style="text-align:right; white-space:nowrap;">
           <svg onclick="editVehicle(${v.id})" style="cursor:pointer; margin-right:14px; vertical-align:middle;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--text2)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l4.5-1 10-10a2 2 0 0 0-3-3l-10 10-1 4.5z"/><path d="M13 6l3 3"/></svg>
           <svg onclick="deleteVehicle(${v.id})" style="cursor:pointer; vertical-align:middle;" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="var(--danger)" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M5 7h14"/><path d="M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2"/><path d="M7 7l1 12a1 1 0 0 0 1 1h6a1 1 0 0 0 1-1l1-12"/><path d="M10 11v6"/><path d="M14 11v6"/></svg>

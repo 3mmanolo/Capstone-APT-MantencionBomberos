@@ -1,0 +1,13 @@
+# Secretos: nunca dentro de la imagen
+.env
+*.env
+
+# Entorno virtual y cachés
+.venv/
+venv/
+__pycache__/
+*.pyc
+
+# Datos locales y reportes
+db.sqlite3
+bandit_report.json

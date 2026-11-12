@@ -65,7 +65,7 @@ def run_seed():
         user_obj, user_created = User.objects.get_or_create(username=udata["username"])
         if user_created:
             user_obj.email = udata["email"]
-            user_obj.set_password("admin123")
+            user_obj.set_password(os.getenv('SEED_PASSWORD', 'admin123'))
             user_obj.is_superuser = udata["is_superuser"]
             user_obj.is_staff = udata["is_superuser"]
             user_obj.save()
