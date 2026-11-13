@@ -20,6 +20,8 @@ import json
 from django.utils.safestring import mark_safe
 from django_ratelimit.decorators import ratelimit
 from .permissions import gestiona_flota
+from .validaciones import normalizar_patente, validar_anio, parse_fecha, parse_monto, parse_cantidad
+from .reportes import respuesta_pdf_vehiculo
 
 
 from django.urls import path
@@ -328,24 +330,30 @@ def registrar(request):
         if not tipo_obj:
             errores.append('Selecciona un tipo de mantención válido.')
 
-        # El input llega como "$ 0", "$ 85.000", etc. Nos quedamos solo con los dígitos.
-        costo_manual = Decimal(re.sub(r'[^\d]', '', costo_raw) or '0')
+        # El input llega como "$ 0", "$ 85.000", etc. Ya no se corrigen valores en
+        # silencio: un costo negativo o con letras se rechaza con un mensaje (defecto 18).
+        costo_manual, error = parse_monto(costo_raw)
+        if error:
+            errores.append(error)
+            costo_manual = Decimal('0')
 
-        # Insumos: solo se consideran las filas donde se eligió un insumo real
-        # y se indicó una cantidad mayor a 0. Filas vacías o incompletas se
-        # ignoran en vez de marcarse como error, ya que son opcionales.
+        # Insumos: las filas totalmente vacías se ignoran (son opcionales), pero una
+        # fila incompleta o con cantidad inválida se informa en vez de descartarse (defecto 18).
         insumos_validos = []  # [(Insumo, Decimal cantidad), ...]
-        for insu_id, cant_raw in zip(insumo_ids, insumo_cants):
-            if not insu_id or not cant_raw:
+        for n, (insu_id, cant_raw) in enumerate(zip(insumo_ids, insumo_cants), start=1):
+            insu_id, cant_raw = (insu_id or '').strip(), (cant_raw or '').strip()
+            if not insu_id and not cant_raw:
                 continue
-            insumo_obj = Insumo.objects.filter(pk=insu_id).first()
+            insumo_obj = Insumo.objects.filter(pk=insu_id).first() if insu_id else None
             if not insumo_obj:
+                errores.append(f'Insumo {n}: selecciona un insumo de la lista.')
                 continue
-            try:
-                cantidad = Decimal(cant_raw)
-            except (InvalidOperation, ValueError):
+            if not cant_raw:
+                errores.append(f'Insumo {n} ({insumo_obj.nombre}): indica la cantidad.')
                 continue
-            if cantidad <= 0:
+            cantidad, error = parse_cantidad(cant_raw)
+            if error:
+                errores.append(f'Insumo {n} ({insumo_obj.nombre}): la cantidad {error}.')
                 continue
             insumos_validos.append((insumo_obj, cantidad))
 
@@ -361,6 +369,7 @@ def registrar(request):
                     estado='pendiente',
                     costo_t=costo_total,
                     respon=respon,
+                    registrado_por=request.user,  # defecto 27
                 )
                 for insumo_obj, cantidad in insumos_validos:
                     MantencionInsu.objects.create(
@@ -381,6 +390,9 @@ def registrar(request):
             'insumos_disponibles': insumos_disponibles,
             'errores': errores,
             'descripcion_valor': descripcion,
+            'tipo_id_seleccionado': tipo_id,
+            'costo_valor': costo_raw,
+            'respon_valor': respon,
         }
         return render(request, 'core/registrar.html', context)
 
@@ -399,13 +411,43 @@ def registrar(request):
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 
+_TELEFONO_RE = re.compile(r'^\+?[\d\s()-]{7,20}$')
+
+
 @login_required(login_url='index')
 def perfil(request):
+    """Mi perfil: consulta y edición de nombre y teléfono (defecto 25).
+    El correo, el rol y la compañía los cambia un administrador en Usuarios."""
     perfil_usuario, current_user_data = _datos_usuario_actual(request)
+    errores = []
+
+    if request.method == 'POST' and perfil_usuario:
+        nombre = request.POST.get('nombre', '').strip()
+        telefono = request.POST.get('telefono', '').strip()
+        if not nombre:
+            errores.append('Ingresa tu nombre completo.')
+        elif nombre.isdigit():
+            errores.append('El nombre no puede contener solo números.')
+        elif len(nombre) > 120:
+            errores.append('El nombre puede tener como máximo 120 caracteres.')
+        if telefono and not _TELEFONO_RE.match(telefono):
+            errores.append('Teléfono inválido. Usa solo números, espacios, + o guiones (por ejemplo, +56 9 1234 5678).')
+        if not errores:
+            perfil_usuario.nombre = nombre
+            perfil_usuario.telefono = telefono
+            perfil_usuario.save(update_fields=['nombre', 'telefono'])
+            messages.success(request, 'Tus datos de contacto se actualizaron.')
+            return redirect('perfil')
+
     current_user_data['email'] = request.user.email
     current_user_data['telefono'] = perfil_usuario.telefono if perfil_usuario else ''
-
-    return render(request, 'core/perfil.html', {'current_user': current_user_data})
+    return render(request, 'core/perfil.html', {
+        'current_user': current_user_data,
+        'puede_editar': bool(perfil_usuario),
+        'errores': errores,
+        'nombre_valor': request.POST.get('nombre', current_user_data['name']) if errores else current_user_data['name'],
+        'telefono_valor': request.POST.get('telefono', current_user_data['telefono']) if errores else current_user_data['telefono'],
+    })
 
 TIPOS_VEHICULO = ['Carro bomba', 'Rescate', 'Forestal', 'Aljibe', 'Ambulancia', 'Otro']
 
@@ -466,32 +508,51 @@ def vehiculos(request):
             if not tipo_v:
                 errores.append('Selecciona un tipo de vehículo.')
 
-            anio = int(anio_raw) if anio_raw.isdigit() else None
+            # Patente con formato chileno (defecto 19) y año en un rango posible (defecto 26)
+            patente, error = normalizar_patente(patente)
+            if error:
+                errores.append(error)
+            anio, error = validar_anio(anio_raw)
+            if error:
+                errores.append(error)
+            proxima, error = parse_fecha(proxima_raw)
+            if error:
+                errores.append(error)
             try:
                 kilometraje = float(km_raw) if km_raw else 0
             except ValueError:
                 kilometraje = 0
+                errores.append('El kilometraje debe ser un número.')
 
             # 🔒 Validación: El kilometraje no puede ser negativo
             if kilometraje < 0:
                 errores.append('El kilometraje no puede ser menor a 0.')
 
+            # Patente duplicada: se revisa antes de guardar para dar el mensaje correcto (defecto 21)
+            if patente:
+                duplicada = Vehiculo.objects.filter(patente__iexact=patente)
+                if edit_id:
+                    duplicada = duplicada.exclude(pk=edit_id)
+                if duplicada.exists():
+                    errores.append(f'Ya existe un vehículo con la patente {patente}.')
+
             if not errores:
                 vehiculo_obj = get_object_or_404(Vehiculo, pk=edit_id) if edit_id else Vehiculo()
-                vehiculo_obj.patente = patente or None
+                vehiculo_obj.patente = patente
                 vehiculo_obj.modelo = modelo
                 vehiculo_obj.tipo_v = tipo_v
                 vehiculo_obj.anio = anio
                 vehiculo_obj.kilometraje = kilometraje
                 vehiculo_obj.id_compania = compania_obj
-                vehiculo_obj.proxima_mantencion = proxima_raw or None
+                vehiculo_obj.proxima_mantencion = proxima
                 if not edit_id:
                     vehiculo_obj.estado = 'operativo'
                 try:
                     vehiculo_obj.save()
                     return redirect('vehiculos')
                 except Exception:
-                    errores.append('Ya existe un vehículo con esa patente.')
+                    logger.exception('Error al guardar vehículo')
+                    errores.append('No se pudo guardar el vehículo. Revisa los datos e inténtalo de nuevo.')
 
     hoy = timezone.localdate()
     vehiculos_data = []
@@ -625,38 +686,53 @@ def usuarios(request):
 
             # --- CASO 1: EDICIÓN DE UN USUARIO EXISTENTE ---
             if user_id:
-                u = get_object_or_404(Usuario, pk=user_id)
-                u.nombre = nombre
-                u.rol = rol
+                # Se valida todo ANTES de guardar nada (defecto 43: antes guardaba el correo
+                # aunque otro campo fallara, no validaba el rol y daba error 500 con datos inválidos).
+                u = get_object_or_404(Usuario.objects.select_related('user'), pk=user_id)
+                nombre = (nombre or '').strip()
                 compania_obj = Compania.objects.filter(pk=compania_id).first() if compania_id else None
-                if compania_id:
-                    u.id_compania_id = compania_id
-                
-                # Actualizar y validar correo si fue modificado
-                if email and u.user:
+
+                if not nombre:
+                    errores.append('Ingresa el nombre completo.')
+                elif nombre.isdigit():
+                    errores.append('El nombre no puede contener solo números.')
+                if rol not in ROLES_USUARIO:
+                    errores.append('Selecciona un rol válido.')
+                if compania_id and not compania_obj:
+                    errores.append('Selecciona una compañía válida.')
+
+                nuevo_username = None
+                if email and u.user and email != (u.user.email or '').lower():
                     try:
                         validate_email(email)
                     except ValidationError:
                         errores.append('Ingresa un correo válido.')
                     else:
+                        nuevo_username = email.split('@')[0]
                         if User.objects.filter(email__iexact=email).exclude(pk=u.user.pk).exists():
                             errores.append('Ya existe otro usuario con ese correo.')
-                        else:
-                            u.user.email = email
-                            u.user.username = email.split('@')[0]
-                            u.user.save()
+                        elif User.objects.filter(username__iexact=nuevo_username).exclude(pk=u.user.pk).exists():
+                            errores.append('Ya existe otro usuario con un correo que empieza igual; usa otro correo.')
 
-                # Actualizar contraseña opcionalmente de forma segura
                 if u.user and nueva_password:
                     try:
                         validate_password(nueva_password, user=u.user)
-                        u.user.set_password(nueva_password)
-                        u.user.save()
                     except ValidationError as e:
                         errores.extend(e.messages)
 
                 if not errores:
-                    u.save()
+                    with transaction.atomic():
+                        u.nombre = nombre
+                        u.rol = rol
+                        u.id_compania = compania_obj
+                        u.save()
+                        if u.user:
+                            if nuevo_username:
+                                u.user.email = email
+                                u.user.username = nuevo_username
+                            if nueva_password:
+                                u.user.set_password(nueva_password)
+                            u.user.save()
                     return redirect('usuarios')
 
             # --- CASO 2: ALTA DE UN USUARIO NUEVO ---
@@ -694,7 +770,8 @@ def usuarios(request):
                     return redirect('usuarios')
 
             # Si hay errores, guardamos los datos para no perderlos en el formulario
-            form_data = {'name': nombre, 'email': email, 'role': rol, 'comp_id': compania_id or ''}
+            form_data = {'name': nombre, 'email': email, 'role': rol, 'comp_id': compania_id or '',
+                         'edit_id': user_id or ''}
 
     users_data = []
     for u in Usuario.objects.select_related('id_compania', 'user').all():
@@ -731,6 +808,7 @@ def usuarios(request):
         'current_user': current_user_data,
         'current_user_json': {'isAdmin': is_admin},
         'companias': Compania.objects.all(),
+        'roles': ROLES_USUARIO,
         'errores': errores,
         'form_data': form_data,
     }
@@ -738,130 +816,8 @@ def usuarios(request):
     return render(request, 'core/usuarios.html', context)
 
 
-
-
-
-import io
-from django.http import HttpResponse
-from django.shortcuts import get_object_or_404
-from django.contrib.auth.decorators import login_required
-from reportlab.lib.pagesizes import letter
-from reportlab.lib import colors
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-from .models import Vehiculo, Mantencion  # Ajusta según el nombre exacto de tus modelos
-
 @login_required(login_url='index')
 def descargar_pdf_vehiculo(request, id_vehi):
-    # 1. Obtener vehículo y sus mantenciones
-    vehiculo = get_object_or_404(Vehiculo, pk=id_vehi)
-    mantenciones = Mantencion.objects.filter(id_vehi=vehiculo).order_by('fecha_ter')  # Ajusta la relación según tu modelo
-
-    # 2. Configurar la respuesta HTTP como PDF
-    response = HttpResponse(content_type='application/pdf')
-    filename = f"Informe_{vehiculo.modelo if hasattr(vehiculo, 'modelo') else vehiculo_modelo}_{vehiculo.patente if hasattr(vehiculo, 'patente') else vehiculo_id}.pdf"
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-
-    # 3. Crear buffer y documento ReportLab
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
-    story = []
-
-    # Estilos
-    styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        'DocTitle',
-        parent=styles['Heading1'],
-        fontSize=18,
-        leading=22,
-        textColor=colors.HexColor("#b91c1c"), # Color rojo institucional
-        fontName="Helvetica-Bold",
-        spaceAfter=6
-    )
-    subtitle_style = ParagraphStyle(
-        'DocSub',
-        parent=styles['Normal'],
-        fontSize=10,
-        textColor=colors.HexColor("#666666"),
-        spaceAfter=15
-    )
-    h2_style = ParagraphStyle(
-        'Heading2',
-        parent=styles['Heading2'],
-        fontSize=13,
-        textColor=colors.HexColor("#111827"),
-        spaceBefore=12,
-        spaceAfter=8,
-        fontName="Helvetica-Bold"
-    )
-
-    # Header / Título del PDF
-    nombre_vehiculo = getattr(vehiculo, 'nombre', str(vehiculo))
-    patente = getattr(vehiculo, 'patente', 'Sin patente')
-    story.append(Paragraph(f"Informe Técnico de Vehículo: {nombre_vehiculo}", title_style))
-    story.append(Paragraph(f"Patente: {patente} | Ficha oficial de flota - Bomberos Talcahuano", subtitle_style))
-
-    # --- RESUMEN Y DATOS DEL VEHÍCULO ---
-    story.append(Paragraph("Resumen del Vehículo", h2_style))
-    
-    # Calcular métricas simples de resumen
-    total_mantenciones = mantenciones.count()
-    costo_total = sum(getattr(m, 'costo', 0) or 0 for m in mantenciones)
-
-    datos_resumen = [
-        ["Tipo de Vehículo:", getattr(vehiculo, 'tipo', 'Carro bomba'), "Año:", str(getattr(vehiculo, 'anio', '-'))],
-        ["Kilometraje:", f"{getattr(vehiculo, 'kilometraje', 0)} km", "Estado:", getattr(vehiculo, 'estado', 'Operativo')],
-        ["Total Mantenciones:", str(total_mantenciones), "Costo Total Acumulado:", f"${costo_total:,.0f}"]
-    ]
-
-    tabla_resumen = Table(datos_resumen, colWidths=[120, 150, 130, 140])
-    tabla_resumen.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#f9fafb")),
-        ('TEXTCOLOR', (0,0), (-1,-1), colors.HexColor("#374151")),
-        ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
-        ('FONTNAME', (2,0), (2,-1), 'Helvetica-Bold'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-        ('TOPPADDING', (0,0), (-1,-1), 6),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#e5e7eb")),
-    ]))
-    story.append(tabla_resumen)
-    story.append(Spacer(1, 15))
-
-    # --- HISTORIAL COMPLETO DE MANTENCIONES ---
-    story.append(Paragraph("Historial de Mantenciones", h2_style))
-
-    encabezados = ["Fecha", "Trabajo / Tipo", "Taller", "Costo", "Estado"]
-    filas_tabla = [encabezados]
-
-    for m in mantenciones:
-        fecha_ter = m.fecha_ter.strftime("%d/%m/%Y") if hasattr(m, 'fecha_ter') and m.fecha_ter else "-"
-        descripcion = getattr(m, 'descripcion', getattr(m, 'tipo', 'Mantención'))
-        taller = getattr(m, 'taller', '-') or '-'
-        costo = f"${getattr(m, 'costo', 0):,.0f}" if getattr(m, 'costo', None) else "$0"
-        estado = getattr(m, 'estado', 'Pendiente')
-
-        filas_tabla.append([fecha_ter, descripcion, taller, costo, estado])
-
-    if len(filas_tabla) == 1:
-        filas_tabla.append(["-", "Sin mantenciones registradas", "-", "-", "-"])
-
-    tabla_historial = Table(filas_tabla, colWidths=[70, 200, 110, 80, 80])
-    tabla_historial.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#b91c1c")),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,-1), 9),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
-        ('TOPPADDING', (0,0), (-1,-1), 5),
-        ('ALIGN', (3,0), (3,-1), 'RIGHT'), # Alineación de costo a la derecha
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#e5e7eb")),
-        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor("#f9fafb")]),
-    ]))
-    story.append(tabla_historial)
-
-    # Construir PDF
-    doc.build(story)
-    pdf = buffer.getvalue()
-    buffer.close()
-    response.write(pdf)
-    return response
+    """Descarga el informe PDF del vehículo (generado en core/reportes.py)."""
+    vehiculo = get_object_or_404(Vehiculo.objects.select_related('id_compania'), pk=id_vehi)
+    return respuesta_pdf_vehiculo(vehiculo)

@@ -4,7 +4,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Usuarios - Control de mantención</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="icon" type="image/png" href="{% static 'imagenes/logo.png' %}">
 <link rel="stylesheet" href="{% static 'styles.css' %}">
 <style>
@@ -73,11 +73,7 @@
     </div>
 
     <div class="content">
-      {% if errores %}
-      <div class="card" style="max-width:640px; margin:0 0 16px; border-color:var(--red); background:var(--amber-bg);">
-        {% for e in errores %}<p style="margin:4px 0; color:var(--red);">{{ e }}</p>{% endfor %}
-      </div>
-      {% endif %}
+      {% include "core/_mensajes.html" %}
 
       <!-- Formulario para Agregar / Editar -->
       <form method="POST" action="{% url 'usuarios' %}" class="card" id="form-card" style="display:none; margin-bottom:20px; max-width:640px;">
@@ -124,10 +120,9 @@
           </div>
           <div>
             <label>Rol</label>
-            <select id="f-role" name="rol">
-              <option value="Administrador">Administrador</option>
-              <option value="Encargado de flota">Encargado de flota</option>
-              <option value="Voluntario">Voluntario</option>
+            <select id="f-role" name="rol" required>
+              <option value="" disabled>Selecciona un rol</option>
+              {% for r in roles %}<option value="{{ r }}">{{ r }}</option>{% endfor %}
             </select>
           </div>
         </div>
@@ -306,7 +301,9 @@
 
   const FORM_DATA = JSON.parse(document.getElementById('form-data').textContent);
   if (FORM_DATA) {
-    openForm(null);
+    // Si el error fue al EDITAR, se reabre en modo edición (antes volvía como "Agregar" y creaba un usuario nuevo)
+    const editado = FORM_DATA.edit_id ? USERS.find(u => String(u.id) === String(FORM_DATA.edit_id)) : null;
+    openForm(editado || null);
     document.getElementById('f-name').value = FORM_DATA.name;
     document.getElementById('f-email').value = FORM_DATA.email;
     document.getElementById('f-comp').value = FORM_DATA.comp_id;

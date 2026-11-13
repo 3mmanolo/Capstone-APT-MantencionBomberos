@@ -25,6 +25,9 @@ from rest_framework import status
 from .models import Vehiculo, Usuario, Compania, Mantencion, TipoMantencion, Insumo, MantencionInsu
 from .views import _estado_visual_vehiculo, ROLES_USUARIO
 from .permissions import EsAdministrador, GestionaFlota, LecturaOAdministrador
+from .validaciones import normalizar_patente, validar_anio, parse_fecha, parse_monto
+from .reportes import respuesta_pdf_vehiculo
+from django.shortcuts import get_object_or_404
 from django_ratelimit.decorators import ratelimit
 
 def _get_json_body(request):
@@ -34,19 +37,6 @@ def _get_json_body(request):
     except Exception:
         pass
     return {}
-
-def _parse_date_safe(date_str):
-    if not date_str:
-        return timezone.localdate() + timezone.timedelta(days=90)
-    date_str = str(date_str).strip()
-    if not date_str or date_str.lower() in ['dd-mm-aaaa', 'yyyy-mm-dd', 'none', 'null', '']:
-        return timezone.localdate() + timezone.timedelta(days=90)
-    for fmt in ('%Y-%m-%d', '%d-%m-%Y', '%d/%m/%Y', '%Y/%m/%d'):
-        try:
-            return datetime.datetime.strptime(date_str, fmt).date()
-        except ValueError:
-            pass
-    return timezone.localdate() + timezone.timedelta(days=90)
 
 import secrets
 from django.core.mail import send_mail
@@ -306,6 +296,23 @@ def api_vehiculos(request):
         if not modelo or not tipo_v:
             return JsonResponse({'success': False, 'message': 'Modelo y Tipo son requeridos.'}, status=400)
 
+        # Validaciones compartidas con la web: ya no se inventan valores (antes año 2024 y fecha +90 días)
+        patente, error = normalizar_patente(patente)
+        if error:
+            return JsonResponse({'success': False, 'message': error}, status=400)
+        anio_val, error = validar_anio(anio)
+        if error:
+            return JsonResponse({'success': False, 'message': error}, status=400)
+        proxima_val, error = parse_fecha(proxima)
+        if error:
+            return JsonResponse({'success': False, 'message': error}, status=400)
+        try:
+            km_val = Decimal(str(km).replace(',', '.')) if km not in (None, '') else Decimal(0)
+        except (InvalidOperation, ValueError):
+            return JsonResponse({'success': False, 'message': 'El kilometraje debe ser un número.'}, status=400)
+        if km_val < 0:
+            return JsonResponse({'success': False, 'message': 'El kilometraje no puede ser menor a 0.'}, status=400)
+
         if patente:
             existing = Vehiculo.objects.filter(patente__iexact=patente)
             if edit_id:
@@ -330,16 +337,14 @@ def api_vehiculos(request):
         v_obj.tipo_v = tipo_v
         v_obj.id_compania = compania_obj
 
-        if anio:
-            try:
-                v_obj.anio = int(re.sub(r'[^\d]', '', str(anio)) or '2024')
-            except Exception:
-                v_obj.anio = 2024
-        else:
-            v_obj.anio = 2024
-
-        v_obj.kilometraje = Decimal(str(km)) if km else Decimal(0)
-        v_obj.proxima_mantencion = _parse_date_safe(proxima)
+        v_obj.anio = anio_val
+        v_obj.kilometraje = km_val
+        # Si la app no envía fecha en un vehículo nuevo, se programa a 90 días (comportamiento previo de la app);
+        # si la envía mal formada, ya se rechazó arriba con 400.
+        if proxima_val:
+            v_obj.proxima_mantencion = proxima_val
+        elif not edit_id:
+            v_obj.proxima_mantencion = timezone.localdate() + timezone.timedelta(days=90)
 
         try:
             v_obj.save()
@@ -377,11 +382,16 @@ def api_registrar_mantencion(request):
     if not v_obj:
         return JsonResponse({'success': False, 'message': 'Vehículo no encontrado.'}, status=400)
 
-    tipo_obj = TipoMantencion.objects.filter(nombre__iexact=tipo_nombre).first()
+    tipo_obj = TipoMantencion.objects.filter(nombre__iexact=tipo_nombre).first() or TipoMantencion.objects.first()
     if not tipo_obj:
-        tipo_obj = TipoMantencion.objects.first()
+        return JsonResponse({'success': False, 'message': 'No hay tipos de mantención configurados.'}, status=400)
 
-    costo_val = Decimal(re.sub(r'[^\d]', '', costo_raw) or '0')
+    costo_val, error = parse_monto(costo_raw)
+    if error:
+        return JsonResponse({'success': False, 'message': error}, status=400)
+    proxima_val, error = parse_fecha(proxima_fecha)
+    if error:
+        return JsonResponse({'success': False, 'message': error}, status=400)
 
     desc_completa = descripcion
     if materiales:
@@ -394,12 +404,13 @@ def api_registrar_mantencion(request):
             descripcion=desc_completa,
             estado='pendiente',
             costo_t=costo_val,
-            respon=taller
+            respon=taller,
+            registrado_por=request.user,
         )
 
         v_obj.estado = 'en mantención'
-        if proxima_fecha:
-            v_obj.proxima_mantencion = proxima_fecha
+        if proxima_val:
+            v_obj.proxima_mantencion = proxima_val
         v_obj.save()
 
     return JsonResponse({'success': True, 'message': 'Mantención registrada exitosamente.', 'id': mantencion_obj.pk})
@@ -623,115 +634,7 @@ def api_vehiculo_operativo(request, vehiculo_id):
 @csrf_exempt
 def api_vehiculo_pdf(request, vehiculo_id):
     """GET /api/vehiculos/<id>/pdf/ - Genera y descarga el informe PDF del vehículo."""
-    import io
-    from django.http import HttpResponse
-    from django.shortcuts import get_object_or_404
-    from reportlab.lib.pagesizes import letter
-    from reportlab.lib import colors
-    from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle
-    from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
-
-    vehiculo = get_object_or_404(Vehiculo, pk=vehiculo_id)
-    mantenciones = Mantencion.objects.filter(id_vehi=vehiculo).order_by('fecha_ter')
-
-    response = HttpResponse(content_type='application/pdf')
-    nombre_mod = getattr(vehiculo, 'modelo', 'Vehiculo')
-    patente_val = getattr(vehiculo, 'patente', str(vehiculo_id))
-    filename = f"Informe_{nombre_mod}_{patente_val}.pdf"
-    response['Content-Disposition'] = f'attachment; filename="{filename}"'
-
-    buffer = io.BytesIO()
-    doc = SimpleDocTemplate(buffer, pagesize=letter, rightMargin=36, leftMargin=36, topMargin=36, bottomMargin=36)
-    story = []
-
-    styles = getSampleStyleSheet()
-    title_style = ParagraphStyle(
-        'DocTitle',
-        parent=styles['Heading1'],
-        fontSize=18,
-        leading=22,
-        textColor=colors.HexColor("#b91c1c"),
-        fontName="Helvetica-Bold",
-        spaceAfter=6
-    )
-    subtitle_style = ParagraphStyle(
-        'DocSub',
-        parent=styles['Normal'],
-        fontSize=10,
-        textColor=colors.HexColor("#666666"),
-        spaceAfter=15
-    )
-    h2_style = ParagraphStyle(
-        'Heading2',
-        parent=styles['Heading2'],
-        fontSize=13,
-        textColor=colors.HexColor("#111827"),
-        spaceBefore=12,
-        spaceAfter=8,
-        fontName="Helvetica-Bold"
-    )
-
-    nombre_vehiculo = getattr(vehiculo, 'modelo', str(vehiculo))
-    patente = getattr(vehiculo, 'patente', 'Sin patente')
-    story.append(Paragraph(f"Informe Técnico de Vehículo: {nombre_vehiculo}", title_style))
-    story.append(Paragraph(f"Patente: {patente} | Ficha oficial de flota - Bomberos Talcahuano", subtitle_style))
-
-    story.append(Paragraph("Resumen del Vehículo", h2_style))
-    total_mantenciones = mantenciones.count()
-    costo_total = sum(getattr(m, 'costo', 0) or 0 for m in mantenciones)
-
-    datos_resumen = [
-        ["Tipo de Vehículo:", getattr(vehiculo, 'tipo_v', 'Carro bomba'), "Año:", str(getattr(vehiculo, 'anio', '-'))],
-        ["Kilometraje:", f"{getattr(vehiculo, 'kilometraje', 0)} km", "Estado:", getattr(vehiculo, 'estado', 'Operativo')],
-        ["Total Mantenciones:", str(total_mantenciones), "Costo Total Acumulado:", f"${costo_total:,.0f}"]
-    ]
-
-    tabla_resumen = Table(datos_resumen, colWidths=[120, 150, 130, 140])
-    tabla_resumen.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,-1), colors.HexColor("#f9fafb")),
-        ('TEXTCOLOR', (0,0), (-1,-1), colors.HexColor("#374151")),
-        ('FONTNAME', (0,0), (0,-1), 'Helvetica-Bold'),
-        ('FONTNAME', (2,0), (2,-1), 'Helvetica-Bold'),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 6),
-        ('TOPPADDING', (0,0), (-1,-1), 6),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#e5e7eb")),
-    ]))
-    story.append(tabla_resumen)
-    story.append(Spacer(1, 15))
-
-    story.append(Paragraph("Historial de Mantenciones", h2_style))
-    encabezados = ["Fecha", "Trabajo / Tipo", "Taller", "Costo", "Estado"]
-    filas_tabla = [encabezados]
-
-    for m in mantenciones:
-        fecha_ter = m.fecha_ter.strftime("%d/%m/%Y") if hasattr(m, 'fecha_ter') and m.fecha_ter else "-"
-        descripcion = getattr(m, 'descripcion', getattr(m, 'observaciones', 'Mantención'))
-        taller = getattr(m, 'taller', '-') or '-'
-        costo = f"${getattr(m, 'costo', 0):,.0f}" if getattr(m, 'costo', None) else "$0"
-        estado = getattr(m, 'estado', 'Pendiente')
-        filas_tabla.append([fecha_ter, str(descripcion), str(taller), str(costo), str(estado)])
-
-    if len(filas_tabla) == 1:
-        filas_tabla.append(["-", "Sin mantenciones registradas", "-", "-", "-"])
-
-    tabla_historial = Table(filas_tabla, colWidths=[70, 200, 110, 80, 80])
-    tabla_historial.setStyle(TableStyle([
-        ('BACKGROUND', (0,0), (-1,0), colors.HexColor("#b91c1c")),
-        ('TEXTCOLOR', (0,0), (-1,0), colors.whitesmoke),
-        ('FONTNAME', (0,0), (-1,0), 'Helvetica-Bold'),
-        ('FONTSIZE', (0,0), (-1,-1), 9),
-        ('BOTTOMPADDING', (0,0), (-1,-1), 5),
-        ('TOPPADDING', (0,0), (-1,-1), 5),
-        ('ALIGN', (3,0), (3,-1), 'RIGHT'),
-        ('GRID', (0,0), (-1,-1), 0.5, colors.HexColor("#e5e7eb")),
-        ('ROWBACKGROUNDS', (0,1), (-1,-1), [colors.white, colors.HexColor("#f9fafb")]),
-    ]))
-    story.append(tabla_historial)
-
-    doc.build(story)
-    pdf = buffer.getvalue()
-    buffer.close()
-    response.write(pdf)
-    return response
+    vehiculo = get_object_or_404(Vehiculo.objects.select_related('id_compania'), pk=vehiculo_id)
+    return respuesta_pdf_vehiculo(vehiculo)
 
 

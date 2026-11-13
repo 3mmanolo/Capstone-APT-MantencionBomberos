@@ -5,7 +5,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Mi perfil - Control de mantención</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="icon" type="image/png" href="{% static 'imagenes/logo.png' %}">
 <link rel="stylesheet" href="{% static 'styles.css' %}">
 <style>/* Estilos globales para el modo oscuro */
@@ -84,11 +84,27 @@ body.dark-mode textarea {
           <div><p style="font-size:16px; font-weight:700; margin:0;"> {{ current_user.name }}</p><p style="font-size:12px; color:var(--text2); margin:0;">{{ current_user.rol }} · {{ current_user.comp }}</p></div>
         </div>
 
+        {% include "core/_mensajes.html" %}
+
         <div class="card" style="margin-bottom:14px;">
           <p style="font-size:12px; color:var(--text2); margin:0 0 10px; font-weight:700;">Datos de contacto</p>
+          {% if puede_editar %}
+          <form method="post" action="{% url 'perfil' %}">
+            {% csrf_token %}
+            <label for="perfil-nombre">Nombre completo</label>
+            <input id="perfil-nombre" type="text" name="nombre" maxlength="120" required value="{{ nombre_valor }}" style="margin-bottom:12px;">
+            <label for="perfil-telefono">Teléfono</label>
+            <input id="perfil-telefono" type="tel" name="telefono" maxlength="20" placeholder="+56 9 1234 5678" value="{{ telefono_valor }}" style="margin-bottom:12px;">
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid var(--border); font-size:13px;"><span style="color:var(--text2);">Correo</span><span>{{ current_user.email|default:"Sin registrar" }}</span></div>
+            <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid var(--border); font-size:13px;"><span style="color:var(--text2);">Rol</span><span>{{ current_user.rol }}</span></div>
+            <p style="font-size:11px; color:var(--text2); margin:6px 0 12px;">El correo, el rol y la compañía los cambia un administrador desde Usuarios.</p>
+            <button type="submit" class="btn-primary">Guardar cambios</button>
+          </form>
+          {% else %}
           <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid var(--border); font-size:13px;"><span style="color:var(--text2);">Correo</span><span>{{ current_user.email|default:"Sin registrar" }}</span></div>
           <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid var(--border); font-size:13px;"><span style="color:var(--text2);">Teléfono</span><span>{{ current_user.telefono|default:"Sin registrar" }}</span></div>
           <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid var(--border); font-size:13px;"><span style="color:var(--text2);">Rol</span><span>{{ current_user.rol }}</span></div>
+          {% endif %}
         </div>
 
         <div class="card" style="margin-bottom:20px;">

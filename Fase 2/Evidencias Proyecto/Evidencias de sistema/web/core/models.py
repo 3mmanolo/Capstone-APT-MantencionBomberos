@@ -102,6 +102,11 @@ class Mantencion(models.Model):
     estado = models.CharField(max_length=30, default="pendiente")
     costo_t = models.DecimalField(max_digits=12, decimal_places=2, default=0)
     respon = models.CharField(max_length=120, blank=True)
+    # Usuario que registró la mantención (web o app). Null en registros antiguos.
+    registrado_por = models.ForeignKey(
+        User, on_delete=models.SET_NULL, null=True, blank=True,
+        db_column="registrado_por", related_name="mantenciones_registradas",
+    )
 
     class Meta:
         db_table = "mantencion"

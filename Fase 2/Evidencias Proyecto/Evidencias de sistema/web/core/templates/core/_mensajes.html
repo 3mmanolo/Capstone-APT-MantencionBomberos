@@ -1,0 +1,24 @@
+{% comment %}
+  Mensajes del sistema con ícono (defecto 20 / E-1.1).
+  Muestra la lista "errores" de la vista y los mensajes de django.contrib.messages.
+  Uso: {% include "core/_mensajes.html" %}
+{% endcomment %}
+{% if errores %}
+<div class="card" role="alert" style="max-width:680px; margin:0 auto 16px; border-color:var(--red); background:var(--amber-bg); display:flex; gap:10px; align-items:flex-start;">
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0; margin-top:2px;" aria-hidden="true"><path d="M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+  <div>{% for e in errores %}<p style="margin:2px 0; color:var(--red);">{{ e }}</p>{% endfor %}</div>
+</div>
+{% endif %}
+{% if messages %}
+{% for message in messages %}
+<div class="card" role="status" style="max-width:680px; margin:0 auto 16px; display:flex; gap:10px; align-items:center; {% if message.tags == 'success' %}border-color:var(--green); background:var(--green-bg);{% else %}border-color:var(--red); background:var(--amber-bg);{% endif %}">
+  {% if message.tags == 'success' %}
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--green)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-hidden="true"><circle cx="12" cy="12" r="10"/><path d="m8 12 3 3 5-6"/></svg>
+  <p style="margin:0; color:var(--green);">{{ message }}</p>
+  {% else %}
+  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="var(--red)" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0;" aria-hidden="true"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+  <p style="margin:0; color:var(--red);">{{ message }}</p>
+  {% endif %}
+</div>
+{% endfor %}
+{% endif %}

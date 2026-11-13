@@ -5,7 +5,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Historial del vehículo - Control de mantención</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="icon" type="image/png" href="{% static 'imagenes/logo.png' %}">
 <link rel="stylesheet" href="{% static 'styles.css' %}">
 </head>
@@ -70,7 +70,7 @@
                 <td style="font-weight:600;">
                   {{ m.id_tipo.nombre|default:"Sin especificar" }}
                   {% if m.estado %}
-  {% if m.estado == 'Preventiva' or m.estado == 'Completada' %}
+  {% if m.estado|lower == 'completada' %}
     <span class="pill" style="margin-left:6px; background:var(--green-bg); color:var(--green);">
   {% else %}
     <span class="pill" style="margin-left:6px; background:var(--danger-bg); color:var(--danger);">
@@ -91,7 +91,7 @@
     </td>
                 <td style="color:var(--text2); white-space:nowrap;">
                   <i class="ti ti-user" style="font-size:13px; margin-right:4px;"></i>
-                  {{ m.empleados_asignados|default:"Sistema" }}
+                  {% if m.registrado_por %}{{ m.registrado_por.perfil.nombre|default:m.registrado_por.username }}{% else %}Sin registro{% endif %}
                 </td>
               </tr>
               {% endfor %}

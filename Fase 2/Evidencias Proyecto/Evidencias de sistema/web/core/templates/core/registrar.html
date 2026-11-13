@@ -5,7 +5,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Registrar mantención - Control de mantención</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="icon" type="image/png" href="{% static 'imagenes/logo.png' %}">
 <link rel="stylesheet" href="{% static 'styles.css' %}">
 <style>
@@ -67,15 +67,12 @@
       </div>
     </div>
     <div class="content">
-      {% if errores %}
-      <div class="card" style="max-width:640px; margin:0 auto 16px; border-color:var(--red); background:var(--amber-bg);">
-        {% for e in errores %}<p style="margin:4px 0; color:var(--red);">{{ e }}</p>{% endfor %}
-      </div>
-      {% endif %}
+      {% include "core/_mensajes.html" %}
       <form class="card" style="max-width:640px; margin:0 auto;" method="post" action="{% url 'registrar' %}">
         {% csrf_token %}
 <label for="vehicle-select">Vehículo</label>
-<select id="vehicle-select" name="vehiculo" style="margin-bottom:16px;">
+<select id="vehicle-select" name="vehiculo" style="margin-bottom:16px;" required>
+  <option value="" disabled {% if not vehiculo_id_preseleccionado %}selected{% endif %}>Selecciona un vehículo</option>
   {% for v in vehiculos %}
     <option value="{{ v.pk }}" {% if vehiculo_id_preseleccionado|add:"0" == v.pk %}selected{% endif %}>
       {{ v.modelo }} · {{ v.id_compania }} — {{ v.patente }}
@@ -94,9 +91,10 @@
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
           <div>
             <label>Tipo de mantención</label>
-            <select name="tipo">
+            <select name="tipo" required>
+              <option value="" disabled {% if not tipo_id_seleccionado %}selected{% endif %}>Selecciona un tipo</option>
               {% for t in tipos_mantencion %}
-                <option value="{{ t.pk }}">{{ t.nombre }}</option>
+                <option value="{{ t.pk }}" {% if tipo_id_seleccionado|add:"0" == t.pk %}selected{% endif %}>{{ t.nombre }}</option>
               {% endfor %}
             </select>
           </div>
@@ -115,7 +113,7 @@
                 <option value="{{ i.pk }}" data-costo="{{ i.costo_uni }}">{{ i.nombre }}{% if i.unidad_m %} ({{ i.unidad_m }}){% endif %} · ${{ i.costo_uni }}</option>
               {% endfor %}
             </select>
-            <input type="number" name="insumo_cant" class="insumo-cant" min="0" step="0.01" placeholder="Cantidad">
+            <input type="number" name="insumo_cant" class="insumo-cant" min="0.01" step="0.01" placeholder="Cantidad">
             <button type="button" class="btn-secondary btn-quitar-insumo" style="padding:6px 10px;" title="Quitar">✕</button>
           </div>
         </div>
@@ -129,8 +127,8 @@
         </div>
 
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
-          <div><label>Otros costos (mano de obra, etc.)</label><input type="text" name="costo" id="input-costo-manual" placeholder="$ 0"></div>
-          <div><label>Responsable</label><input type="text" name="respon" placeholder="Nombre del responsable o taller"></div>
+          <div><label>Otros costos (mano de obra, etc.)</label><input type="text" name="costo" id="input-costo-manual" placeholder="$ 0" value="{{ costo_valor|default:'' }}"></div>
+          <div><label>Responsable</label><input type="text" name="respon" placeholder="Nombre del responsable o taller" value="{{ respon_valor|default:'' }}"></div>
         </div>
 
         <div style="display:flex; justify-content:space-between; padding:8px 0; border-top:1px solid var(--border); font-size:13px; margin-bottom:16px;">

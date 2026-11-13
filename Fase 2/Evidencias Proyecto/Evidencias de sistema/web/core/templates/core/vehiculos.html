@@ -5,7 +5,7 @@
 <head>
 <meta charset="UTF-8">
 <title>Vehículos - Control de mantención</title>
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/tabler-icons/2.44.0/iconfont/tabler-icons.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="icon" type="image/png" href="{% static 'imagenes/logo.png' %}">
 <link rel="stylesheet" href="{% static 'styles.css' %}">
 <style>
@@ -72,11 +72,7 @@
     </div>
 
     <div class="content">
-      {% if errores %}
-      <div class="card" style="max-width:680px; margin:0 auto 16px; border-color:var(--red); background:var(--amber-bg);">
-        {% for e in errores %}<p style="margin:4px 0; color:var(--red);">{{ e }}</p>{% endfor %}
-      </div>
-      {% endif %}
+      {% include "core/_mensajes.html" %}
 
       <form class="card" id="form-card" method="post" action="{% url 'vehiculos' %}" style="display:none; margin-bottom:20px; max-width:680px; margin-left:auto; margin-right:auto;">
         {% csrf_token %}
