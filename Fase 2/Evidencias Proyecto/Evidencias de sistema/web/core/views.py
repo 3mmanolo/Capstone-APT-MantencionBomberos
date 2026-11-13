@@ -256,7 +256,7 @@ def dashboard(request):
         'current_user': current_user_data,
         'total_vehiculos': Vehiculo.objects.count(),
         'vehiculos_operativos': Vehiculo.objects.filter(estado__iexact='operativo').count(),
-        'vehiculos_por_vencer': Vehiculo.objects.filter(estado__iexact='por vencer').count(),
+        'vehiculos_por_vencer': Vehiculo.objects.filter(estado__iexact='en mantención').count(),
         'vehiculos_vencidos': Vehiculo.objects.filter(estado__iexact='vencido').count(),
         'flota': Vehiculo.objects.select_related('id_compania').all(),
     }
