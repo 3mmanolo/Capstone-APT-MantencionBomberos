@@ -254,7 +254,7 @@ def dashboard(request):
         'current_user': current_user_data,
         'total_vehiculos': Vehiculo.objects.count(),
         'vehiculos_operativos': Vehiculo.objects.filter(estado__iexact='operativo').count(),
-        'vehiculos_por_vencer': Vehiculo.objects.filter(estado__iexact='por vencer').count(),
+        'vehiculos_por_vencer': Vehiculo.objects.filter(estado__iexact='en mantención').count(),
         'vehiculos_vencidos': Vehiculo.objects.filter(estado__iexact='vencido').count(),
         'flota': Vehiculo.objects.select_related('id_compania').all(),
     }
@@ -755,7 +755,7 @@ from .models import Vehiculo, Mantencion  # Ajusta según el nombre exacto de tu
 def descargar_pdf_vehiculo(request, id_vehi):
     # 1. Obtener vehículo y sus mantenciones
     vehiculo = get_object_or_404(Vehiculo, pk=id_vehi)
-    mantenciones = Mantencion.objects.filter(id_vehi=vehiculo).order_by('fecha_ter')  # Ajusta la relación según tu modelo
+    mantenciones = Mantencion.objects.filter(id_vehi=vehiculo).order_by('fecha_in')  # Ajusta la relación según tu modelo
 
     # 2. Configurar la respuesta HTTP como PDF
     response = HttpResponse(content_type='application/pdf')
@@ -834,13 +834,13 @@ def descargar_pdf_vehiculo(request, id_vehi):
     filas_tabla = [encabezados]
 
     for m in mantenciones:
-        fecha_ter = m.fecha_ter.strftime("%d/%m/%Y") if hasattr(m, 'fecha_ter') and m.fecha_ter else "-"
+        fecha_in = m.fecha_in.strftime("%d/%m/%Y") if hasattr(m, 'fecha_in') and m.fecha_ter else "-"
         descripcion = getattr(m, 'descripcion', getattr(m, 'tipo', 'Mantención'))
         taller = getattr(m, 'taller', '-') or '-'
         costo = f"${getattr(m, 'costo', 0):,.0f}" if getattr(m, 'costo', None) else "$0"
         estado = getattr(m, 'estado', 'Pendiente')
 
-        filas_tabla.append([fecha_ter, descripcion, taller, costo, estado])
+        filas_tabla.append([fecha_in, descripcion, taller, costo, estado])
 
     if len(filas_tabla) == 1:
         filas_tabla.append(["-", "Sin mantenciones registradas", "-", "-", "-"])
