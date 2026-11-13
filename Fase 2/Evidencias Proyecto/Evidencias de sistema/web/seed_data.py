@@ -124,7 +124,7 @@ def run_seed():
             "compania": "Compañía 1ª",
             "estado": "operativo",
             "kilometraje": 45200,
-            "proxima_mantencion": hoy - timedelta(days=6)  # Vencida
+            "proxima_mantencion": hoy + timedelta(days=90)  # Operativo
         },
         {
             "patente": "FRWZ-88",
@@ -134,7 +134,7 @@ def run_seed():
             "compania": "Compañía 2ª",
             "estado": "operativo",
             "kilometraje": 38100,
-            "proxima_mantencion": hoy + timedelta(days=5)  # Por vencer
+            "proxima_mantencion": hoy + timedelta(days=90)  # Operativo
         },
         {
             "patente": "KTLM-05",
@@ -144,7 +144,7 @@ def run_seed():
             "compania": "Compañía 3ª",
             "estado": "operativo",
             "kilometraje": 29400,
-            "proxima_mantencion": hoy + timedelta(days=4)  # Por vencer
+            "proxima_mantencion": hoy + timedelta(days=90)  # Operativo
         },
         {
             "patente": "JNPX-47",
