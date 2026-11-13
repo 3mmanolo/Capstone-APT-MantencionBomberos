@@ -58,7 +58,7 @@
         {% if not esperando_2fa %}
             <!-- PASO 1: Formulario de Usuario y Contraseña -->
             <h1>Bienvenido<br>de nuevo</h1>
-            <p class="sub">Inicia sesión para gestionar la flota del Cuerpo de Bomberos de Talcahuano</p>
+            <p class="sub">Inicia sesión para gestionar la flota del Cuerpo de Bomberos </p>
 
             <form method="POST" action="{% url 'index' %}">
                 {% csrf_token %}
@@ -88,7 +88,7 @@
             </form>
 
             <div class="login-links">
-              <span class="fp">¿Olvidaste tu contraseña?</span>
+              <!-- <span class="fp">¿Olvidaste tu contraseña?</span> -->
               <span class="co">Compañía 1ª · 2ª · 3ª · 4ª</span>
             </div>
 
@@ -136,7 +136,7 @@
     <div class="login-visual">
       <div class="login-visual-content">
         <p class="login-visual-eyebrow">Cuerpo de Bomberos</p>
-        <h2>Talcahuano</h2>
+        <h2></h2>
         <p>Sistema de control de mantención de vehículos de emergencia</p>
       </div>
     </div>

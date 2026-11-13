@@ -297,6 +297,8 @@ def cambiar_estado(request, id_vehi):
     return redirect('vehidetalle', vehiculo_id=id_vehi)
 
 
+from datetime import datetime  # Asegúrate de importar datetime si no lo tienes
+
 @login_required(login_url='index')
 def registrar(request):
     vehiculos = Vehiculo.objects.all()
@@ -310,11 +312,12 @@ def registrar(request):
     # 🔒 Bloquear si el rol es chofer e intenta enviar datos (POST)
     if not gestiona_flota(request.user):
         messages.error(request, "No tienes permisos para realizar esta acción.")
-        return redirect('dashboard') # O redirigir con un mensaje de error
+        return redirect('dashboard')
 
     if request.method == 'POST':
         vehiculo_id = request.POST.get('vehiculo')
         tipo_id = request.POST.get('tipo')
+        fecha_ter_raw = request.POST.get('fecha_ter', '').strip()  # NUEVO: Capturar fecha de término
         descripcion = request.POST.get('descripcion', '').strip()
         costo_raw = request.POST.get('costo', '')
         respon = request.POST.get('respon', '').strip()
@@ -330,16 +333,20 @@ def registrar(request):
         if not tipo_obj:
             errores.append('Selecciona un tipo de mantención válido.')
 
-        # El input llega como "$ 0", "$ 85.000", etc. Ya no se corrigen valores en
-        # silencio: un costo negativo o con letras se rechaza con un mensaje (defecto 18).
+        # Validar y convertir la fecha de término (opcional)
+        fecha_ter = None
+        if fecha_ter_raw:
+            try:
+                fecha_ter = datetime.strptime(fecha_ter_raw, '%Y-%m-%d').date()
+            except ValueError:
+                errores.append('El formato de la fecha de término no es válido.')
+
         costo_manual, error = parse_monto(costo_raw)
         if error:
             errores.append(error)
             costo_manual = Decimal('0')
 
-        # Insumos: las filas totalmente vacías se ignoran (son opcionales), pero una
-        # fila incompleta o con cantidad inválida se informa en vez de descartarse (defecto 18).
-        insumos_validos = []  # [(Insumo, Decimal cantidad), ...]
+        insumos_validos = []  
         for n, (insu_id, cant_raw) in enumerate(zip(insumo_ids, insumo_cants), start=1):
             insu_id, cant_raw = (insu_id or '').strip(), (cant_raw or '').strip()
             if not insu_id and not cant_raw:
@@ -365,11 +372,12 @@ def registrar(request):
                 mantencion_obj = Mantencion.objects.create(
                     id_vehi=vehiculo_obj,
                     id_tipo=tipo_obj,
+                    fecha_ter=fecha_ter,  # NUEVO: Guardar la fecha de término
                     descripcion=descripcion,
                     estado='pendiente',
                     costo_t=costo_total,
                     respon=respon,
-                    registrado_por=request.user,  # defecto 27
+                    registrado_por=request.user,  
                 )
                 for insumo_obj, cantidad in insumos_validos:
                     MantencionInsu.objects.create(
@@ -393,6 +401,7 @@ def registrar(request):
             'tipo_id_seleccionado': tipo_id,
             'costo_valor': costo_raw,
             'respon_valor': respon,
+            'fecha_ter_valor': fecha_ter_raw,  # NUEVO: Mantener valor en caso de error
         }
         return render(request, 'core/registrar.html', context)
 
@@ -405,8 +414,6 @@ def registrar(request):
     }
 
     return render(request, 'core/registrar.html', context)
-
-
 
 from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
