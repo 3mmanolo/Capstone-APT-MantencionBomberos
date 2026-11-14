@@ -14,7 +14,7 @@ object RetrofitClient {
     private const val PREFS_NAME = "retrofit_prefs"
     private const val KEY_SERVER_URL = "server_url"
     const val DEFAULT_EMULATOR_URL = "http://10.0.2.2:8000/"
-    const val DEFAULT_LOCAL_URL = "http://10.180.85.203:8000/"
+    const val DEFAULT_LOCAL_URL = "http://10.106.35.203:8000/"
 
     private var sharedPreferences: SharedPreferences? = null
 
@@ -27,12 +27,8 @@ object RetrofitClient {
     fun init(context: Context) {
         val prefs = context.applicationContext.getSharedPreferences(PREFS_NAME, Context.MODE_PRIVATE)
         sharedPreferences = prefs
-        val savedUrl = prefs.getString(KEY_SERVER_URL, null)
-        val initialUrl = when {
-            !savedUrl.isNullOrBlank() && !savedUrl.contains("10.202.157.203") && !savedUrl.contains("10.0.2.2") && !savedUrl.contains(":8080") -> savedUrl
-            isEmulator() -> DEFAULT_EMULATOR_URL
-            else -> DEFAULT_LOCAL_URL
-        }
+        // Siempre forzar la IP actual de la red Wi-Fi para evitar usar IPs viejas en memoria
+        val initialUrl = if (isEmulator()) DEFAULT_EMULATOR_URL else DEFAULT_LOCAL_URL
         updateBaseUrl(initialUrl, saveToPrefs = true)
     }
 
@@ -110,4 +106,3 @@ object RetrofitClient {
             .build()
     }
 }
-

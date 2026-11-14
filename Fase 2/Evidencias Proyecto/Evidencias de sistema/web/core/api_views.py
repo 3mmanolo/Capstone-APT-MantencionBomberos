@@ -205,25 +205,27 @@ def api_dashboard(request):
     """GET /api/dashboard/ - Retorna métricas y lista de la flota para la app Android."""
     hoy = timezone.localdate()
     flota = []
-    vehiculos_operativos = 0
-    vehiculos_por_vencer = 0
-    vehiculos_vencidos = 0
+
+    vehiculos_operativos = Vehiculo.objects.filter(estado__iexact='operativo').count()
+    vehiculos_por_vencer = Vehiculo.objects.filter(estado__iexact='en mantención').count()
+    vehiculos_vencidos = Vehiculo.objects.filter(estado__iexact='vencido').count()
 
     for v in Vehiculo.objects.select_related('id_compania').all():
         badge = _estado_visual_vehiculo(v, hoy)
-        if badge['status'] == 'green':
-            vehiculos_operativos += 1
+        if (v.estado or '').strip().lower() == 'en mantención':
+            estado_text = "En mantención"
+            estado_detalle = "En taller / revisión"
+            color_hex = "#854F0B"
+        elif badge['status'] == 'green':
             estado_text = "Operativo"
             estado_detalle = f"Próxima mantención en {(v.proxima_mantencion - hoy).days} días" if v.proxima_mantencion else "Sin programar"
             color_hex = "#34C759"
         elif badge['status'] == 'amber':
-            vehiculos_por_vencer += 1
             dias = (v.proxima_mantencion - hoy).days if v.proxima_mantencion else 0
             estado_text = f"Vence en {dias} días" if dias > 0 else "Vence hoy"
             estado_detalle = "Programar mantención"
             color_hex = "#FF9500"
         elif badge['status'] == 'danger':
-            vehiculos_vencidos += 1
             dias = (hoy - v.proxima_mantencion).days if v.proxima_mantencion else 0
             estado_text = "Mantención vencida"
             estado_detalle = f"Venció hace {dias} días" if dias > 0 else "Venció recientemente"
@@ -231,7 +233,7 @@ def api_dashboard(request):
         else:
             estado_text = "En mantención"
             estado_detalle = "En taller / revisión"
-            color_hex = "#8E8E93"
+            color_hex = "#854F0B"
 
         flota.append({
             'id': f"V-{v.pk}",
@@ -249,7 +251,7 @@ def api_dashboard(request):
     return JsonResponse({
         'success': True,
         'stats': {
-            'totales': len(flota),
+            'totales': Vehiculo.objects.count(),
             'operativos': vehiculos_operativos,
             'por_vencer': vehiculos_por_vencer,
             'vencidos': vehiculos_vencidos

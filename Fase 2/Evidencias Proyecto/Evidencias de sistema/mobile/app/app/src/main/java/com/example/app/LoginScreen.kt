@@ -110,14 +110,7 @@ fun LoginScreen(
                 lineHeight = 28.sp
             )
 
-            Spacer(modifier = Modifier.height(6.dp))
 
-            Text(
-                text = "Cuerpo de Bomberos de Talcahuano",
-                color = BomberosTextSecondary,
-                fontSize = 14.sp,
-                textAlign = TextAlign.Center
-            )
 
             Spacer(modifier = Modifier.height(30.dp))
 
@@ -293,24 +286,7 @@ fun LoginScreen(
 
             Spacer(modifier = Modifier.height(20.dp))
 
-            // Enlaces inferiores
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "¿Olvidaste tu contraseña?",
-                    color = BomberosOrange,
-                    fontSize = 13.sp,
-                    fontWeight = FontWeight.Medium
-                )
-                Text(
-                    text = "Comp. 1ª - 2ª - 3ª - 4ª",
-                    color = BomberosTextSecondary,
-                    fontSize = 13.sp
-                )
-            }
+
 
         } else {
             // ==========================================

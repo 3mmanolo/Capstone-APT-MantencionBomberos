@@ -58,6 +58,9 @@ import com.example.app.ui.theme.AppTheme
 import com.example.app.ui.theme.BomberosBackground
 import com.example.app.ui.theme.BomberosRed
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
 
 @Composable
 fun RegisterScreen(modifier: Modifier = Modifier) {
@@ -73,13 +76,20 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
     var selectedTipo by remember { mutableStateOf(tiposList[0]) }
     var expandedTipoDropdown by remember { mutableStateOf(false) }
 
-    var fechaText by remember { mutableStateOf("2026-08-28") }
+    val currentDate = remember { SimpleDateFormat("yyyy-MM-dd", Locale.getDefault()).format(Date()) }
+    var fechaInicioText by remember { mutableStateOf(currentDate) }
+    var fechaTerminoText by remember { mutableStateOf("") }
     var descripcionText by remember { mutableStateOf("") }
-    var costoText by remember { mutableStateOf("") }
-    var tallerText by remember { mutableStateOf("") }
     var materialesText by remember { mutableStateOf("") }
-    var proximaFechaText by remember { mutableStateOf("2026-11-25") }
+    var costoText by remember { mutableStateOf("") }
+    var responsableText by remember { mutableStateOf("") }
     var isSaving by remember { mutableStateOf(false) }
+
+    // Estados dinámicos para el usuario real autenticado
+    var userName by remember { mutableStateOf("Cargando...") }
+    var userRole by remember { mutableStateOf("Voluntario") }
+    var userCompany by remember { mutableStateOf("Compañía") }
+    var userInitials by remember { mutableStateOf("US") }
 
     LaunchedEffect(Unit) {
         try {
@@ -93,6 +103,21 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
         } catch (e: Exception) {
             // Silencioso
         }
+
+        // Cargar perfil del usuario real logueado (igual que en ProfileScreen)
+        try {
+            val profileResp = RetrofitClient.apiService.getPerfil()
+            if (profileResp.isSuccessful && profileResp.body()?.success == true) {
+                profileResp.body()?.perfil?.let { p ->
+                    userName = p.nombre
+                    userRole = p.rol
+                    userCompany = p.compania
+                    userInitials = p.initials
+                }
+            }
+        } catch (e: Exception) {
+            // Silencioso
+        }
     }
 
     Column(
@@ -100,43 +125,46 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header
+        // Header / Selector de Vehículo
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(BomberosBackground)
                 .padding(16.dp)
         ) {
-            Box(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(12.dp))
-                    .clickable { expandedVehiculoDropdown = true }
-                    .padding(horizontal = 16.dp, vertical = 14.dp)
-            ) {
-                Row(
-                    modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
+            Column {
+                Text(text = "Vehículo", color = Color.White.copy(alpha = 0.8f), fontSize = 13.sp, modifier = Modifier.padding(bottom = 6.dp))
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(12.dp))
+                        .clickable { expandedVehiculoDropdown = true }
+                        .padding(horizontal = 16.dp, vertical = 14.dp)
                 ) {
-                    val label = selectedVehiculo?.let { "${it.nombre} — ${it.patente}" } ?: "Seleccionar vehículo..."
-                    Text(text = label, color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium)
-                    Text(text = "▼", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
-                }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        val label = selectedVehiculo?.let { "${it.nombre} — ${it.patente}" } ?: "Selecciona un vehículo"
+                        Text(text = label, color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Medium)
+                        Text(text = "▼", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                    }
 
-                DropdownMenu(
-                    expanded = expandedVehiculoDropdown,
-                    onDismissRequest = { expandedVehiculoDropdown = false },
-                    modifier = Modifier.fillMaxWidth(0.9f).background(MaterialTheme.colorScheme.surface)
-                ) {
-                    vehiculosList.forEach { vehiculo ->
-                        DropdownMenuItem(
-                            text = { Text("${vehiculo.nombre} — ${vehiculo.patente}", color = MaterialTheme.colorScheme.onSurface) },
-                            onClick = {
-                                selectedVehiculo = vehiculo
-                                expandedVehiculoDropdown = false
-                            }
-                        )
+                    DropdownMenu(
+                        expanded = expandedVehiculoDropdown,
+                        onDismissRequest = { expandedVehiculoDropdown = false },
+                        modifier = Modifier.fillMaxWidth(0.9f).background(MaterialTheme.colorScheme.surface)
+                    ) {
+                        vehiculosList.forEach { vehiculo ->
+                            DropdownMenuItem(
+                                text = { Text("${vehiculo.nombre} — ${vehiculo.patente}", color = MaterialTheme.colorScheme.onSurface) },
+                                onClick = {
+                                    selectedVehiculo = vehiculo
+                                    expandedVehiculoDropdown = false
+                                }
+                            )
+                        }
                     }
                 }
             }
@@ -149,7 +177,7 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
                 .padding(16.dp),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            // Registrado por
+            // Registrado por (Dinámico con el usuario real de sesión)
             Column {
                 Text(text = "Registrado por", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                 Spacer(modifier = Modifier.height(6.dp))
@@ -168,39 +196,39 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
                                 .background(BomberosRed, shape = CircleShape),
                             contentAlignment = Alignment.Center
                         ) {
-                            Text(text = "JP", color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                            Text(text = userInitials, color = Color.White, fontSize = 14.sp, fontWeight = FontWeight.Bold)
                         }
                         Spacer(modifier = Modifier.width(12.dp))
                         Column {
-                            Text(text = "Juan Pérez Soto", color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Bold)
-                            Text(text = "Encargado de flota • Compañía 1ª", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
+                            Text(text = userName, color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                            Text(text = "$userRole • $userCompany", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 12.sp)
                         }
                     }
                 }
             }
 
-            // Tipo y Fecha
+            // Tipo, Fecha inicio y Fecha término (3 Columnas)
             Row(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(16.dp)
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Tipo", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                    Text(text = "Tipo de mantención", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     Spacer(modifier = Modifier.height(6.dp))
                     Box(
                         modifier = Modifier
                             .fillMaxWidth()
                             .background(MaterialTheme.colorScheme.surface, shape = RoundedCornerShape(12.dp))
                             .clickable { expandedTipoDropdown = true }
-                            .padding(horizontal = 16.dp, vertical = 14.dp)
+                            .padding(horizontal = 12.dp, vertical = 14.dp)
                     ) {
                         Row(
                             modifier = Modifier.fillMaxWidth(),
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Text(text = selectedTipo, color = MaterialTheme.colorScheme.onSurface, fontSize = 15.sp)
-                            Text(text = "▼", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
+                            Text(text = selectedTipo, color = MaterialTheme.colorScheme.onSurface, fontSize = 14.sp)
+                            Text(text = "▼", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 10.sp)
                         }
                         DropdownMenu(
                             expanded = expandedTipoDropdown,
@@ -221,19 +249,33 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Fecha", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                    Text(text = "Fecha inicio", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
                     Spacer(modifier = Modifier.height(6.dp))
                     OutlinedTextField(
-                        value = fechaText,
-                        onValueChange = { fechaText = it },
-                        trailingIcon = { 
-                            Icon(
-                                painter = painterResource(id = R.drawable.ic_menu_my_calendar),
-                                contentDescription = null,
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                                modifier = Modifier.size(20.dp)
-                            ) 
-                        },
+                        value = fechaInicioText,
+                        onValueChange = {},
+                        readOnly = true,
+                        singleLine = true,
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                            focusedBorderColor = Color.Transparent,
+                            unfocusedBorderColor = Color.Transparent,
+                            focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                            unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                        ),
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
+
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(text = "Fecha término", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    OutlinedTextField(
+                        value = fechaTerminoText,
+                        onValueChange = { fechaTerminoText = it },
+                        placeholder = { Text("aaaa-mm-dd", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f), fontSize = 12.sp) },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -249,14 +291,14 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
                 }
             }
 
-            // Descripción
+            // Descripción del trabajo
             Column {
                 Text(text = "Descripción del trabajo", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                 Spacer(modifier = Modifier.height(6.dp))
                 OutlinedTextField(
                     value = descripcionText,
                     onValueChange = { descripcionText = it },
-                    placeholder = { Text("Ej: cambio de aceite y filtros...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp) },
+                    placeholder = { Text("Ej: cambio de aceite y filtros, revisión de frenos...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp) },
                     minLines = 3,
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(
@@ -271,13 +313,35 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
                 )
             }
 
-            // Costo y Taller
+            // Materiales e insumos utilizados
+            Column {
+                Text(text = "Materiales e insumos utilizados", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                Spacer(modifier = Modifier.height(6.dp))
+                OutlinedTextField(
+                    value = materialesText,
+                    onValueChange = { materialesText = it },
+                    placeholder = { Text("Ej: Filtro de aceite, pastillas de freno...", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp) },
+                    singleLine = true,
+                    shape = RoundedCornerShape(12.dp),
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedContainerColor = MaterialTheme.colorScheme.surface,
+                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
+                        focusedBorderColor = Color.Transparent,
+                        unfocusedBorderColor = Color.Transparent,
+                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
+                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+
+            // Costos y Responsable (2 Columnas)
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(16.dp)
             ) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Costo (CLP)", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                    Text(text = "Otros costos (CLP)", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(6.dp))
                     OutlinedTextField(
                         value = costoText,
@@ -299,12 +363,12 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
                 }
 
                 Column(modifier = Modifier.weight(1f)) {
-                    Text(text = "Taller", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                    Text(text = "Responsable", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                     Spacer(modifier = Modifier.height(6.dp))
                     OutlinedTextField(
-                        value = tallerText,
-                        onValueChange = { tallerText = it },
-                        placeholder = { Text("Nombre", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp) },
+                        value = responsableText,
+                        onValueChange = { responsableText = it },
+                        placeholder = { Text("Nombre del taller o mecánico", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp) },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -320,57 +384,6 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
                 }
             }
 
-            // Materiales
-            Column {
-                Text(text = "Materiales e insumos", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
-                Spacer(modifier = Modifier.height(6.dp))
-                OutlinedTextField(
-                    value = materialesText,
-                    onValueChange = { materialesText = it },
-                    placeholder = { Text("Ej: filtro de aceite, pastillas de freno", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp) },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
-            // Próxima mantención
-            Column {
-                Text(text = "Próxima mantención sugerida", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
-                Spacer(modifier = Modifier.height(6.dp))
-                OutlinedTextField(
-                    value = proximaFechaText,
-                    onValueChange = { proximaFechaText = it },
-                    trailingIcon = { 
-                        Icon(
-                            painter = painterResource(id = R.drawable.ic_menu_my_calendar),
-                            contentDescription = null,
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                            modifier = Modifier.size(20.dp)
-                        ) 
-                    },
-                    singleLine = true,
-                    shape = RoundedCornerShape(12.dp),
-                    colors = OutlinedTextFieldDefaults.colors(
-                        focusedContainerColor = MaterialTheme.colorScheme.surface,
-                        unfocusedContainerColor = MaterialTheme.colorScheme.surface,
-                        focusedBorderColor = Color.Transparent,
-                        unfocusedBorderColor = Color.Transparent,
-                        focusedTextColor = MaterialTheme.colorScheme.onSurface,
-                        unfocusedTextColor = MaterialTheme.colorScheme.onSurface
-                    ),
-                    modifier = Modifier.fillMaxWidth()
-                )
-            }
-
             // Alerta
             Card(
                 modifier = Modifier.fillMaxWidth(),
@@ -378,7 +391,7 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
                 colors = CardDefaults.cardColors(containerColor = if (MaterialTheme.colorScheme.surface == Color.White) Color(0xFFFEF3D6) else Color(0xFF4A3C00))
             ) {
                 Text(
-                    text = "El vehículo pasará a \"en mantención\" al guardar.",
+                    text = "El vehículo pasará a \"en mantención\" hasta cerrar la orden.",
                     color = if (MaterialTheme.colorScheme.surface == Color.White) Color(0xFFB76E00) else Color(0xFFFFD54F),
                     fontSize = 13.sp,
                     modifier = Modifier.padding(horizontal = 12.dp, vertical = 10.dp)
@@ -396,19 +409,21 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
                     onClick = {
                         descripcionText = ""
                         costoText = ""
-                        tallerText = ""
+                        responsableText = ""
                         materialesText = ""
+                        fechaTerminoText = ""
                     },
                     modifier = Modifier.weight(1f).height(50.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.outlinedButtonColors(contentColor = MaterialTheme.colorScheme.onBackground),
                     border = BorderStroke(1.dp, MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f))
                 ) {
-                    Text(text = "Limpiar", fontSize = 16.sp, fontWeight = FontWeight.SemiBold)
+                    Text(text = "Cancelar", fontSize = 16.sp, fontWeight = FontWeight.Bold)
                 }
 
                 Button(
                     onClick = {
+                        if (isSaving) return@Button
                         val vId = selectedVehiculo?.id ?: 1
                         isSaving = true
                         coroutineScope.launch {
@@ -418,9 +433,9 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
                                     tipo = selectedTipo,
                                     descripcion = descripcionText,
                                     costo = costoText,
-                                    taller = tallerText,
+                                    taller = responsableText,
                                     materiales = materialesText,
-                                    proximaMantencion = proximaFechaText
+                                    proximaMantencion = fechaTerminoText.ifBlank { "2026-12-31" }
                                 )
                                 val resp = RetrofitClient.apiService.registrarMantencion(req)
                                 isSaving = false
@@ -428,14 +443,21 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
                                     Toast.makeText(context, "Mantención registrada con éxito", Toast.LENGTH_LONG).show()
                                     descripcionText = ""
                                     costoText = ""
-                                    tallerText = ""
+                                    responsableText = ""
                                     materialesText = ""
+                                    fechaTerminoText = ""
                                 } else {
-                                    Toast.makeText(context, "Mantención registrada localmente", Toast.LENGTH_SHORT).show()
+                                    val errorJson = try { resp.errorBody()?.string() } catch (e: Exception) { null }
+                                    val msg = if (errorJson != null && errorJson.contains("message")) {
+                                        try {
+                                            com.google.gson.JsonParser.parseString(errorJson).asJsonObject.get("message").asString
+                                        } catch (e: Exception) { null }
+                                    } else null
+                                    Toast.makeText(context, msg ?: "Error al registrar mantención (${resp.code()})", Toast.LENGTH_LONG).show()
                                 }
                             } catch (e: Exception) {
                                 isSaving = false
-                                Toast.makeText(context, "Mantención guardada", Toast.LENGTH_SHORT).show()
+                                Toast.makeText(context, "Error de red", Toast.LENGTH_SHORT).show()
                             }
                         }
                     },
@@ -447,19 +469,11 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
                     if (isSaving) {
                         CircularProgressIndicator(color = Color.White, modifier = Modifier.size(24.dp))
                     } else {
-                        Text(text = "Guardar", fontSize = 16.sp, fontWeight = FontWeight.Bold)
+                        Text(text = "Guardar registro", fontSize = 15.sp, fontWeight = FontWeight.Bold)
                     }
                 }
             }
             Spacer(modifier = Modifier.height(16.dp))
         }
-    }
-}
-
-@Preview(showBackground = true)
-@Composable
-fun RegisterScreenPreview() {
-    AppTheme {
-        RegisterScreen()
     }
 }

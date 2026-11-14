@@ -89,19 +89,19 @@ fun ProfileScreen(
         modifier = modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
-            .statusBarsPadding()
     ) {
-        // Header
+        // Header Compacto Edge-to-Edge
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(BomberosBackground)
-                .padding(horizontal = 16.dp, vertical = 24.dp)
+                .statusBarsPadding()
+                .padding(horizontal = 16.dp, vertical = 12.dp)
         ) {
             Text(
                 text = "Perfil de usuario",
                 color = Color.White,
-                fontSize = 20.sp,
+                fontSize = 18.sp,
                 fontWeight = FontWeight.Bold
             )
         }
@@ -110,99 +110,99 @@ fun ProfileScreen(
             modifier = Modifier
                 .fillMaxSize()
                 .verticalScroll(rememberScrollState())
-                .padding(16.dp),
+                .padding(12.dp),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            // Perfil Info
+            // Perfil Info Compacto
             Row(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .padding(vertical = 16.dp),
+                    .padding(vertical = 8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Box(
                     modifier = Modifier
-                        .size(70.dp)
+                        .size(56.dp)
                         .background(BomberosRed, shape = CircleShape),
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
                         text = userInitials,
                         color = Color.White,
-                        fontSize = 24.sp,
+                        fontSize = 20.sp,
                         fontWeight = FontWeight.Bold
                     )
                 }
-                Spacer(modifier = Modifier.width(16.dp))
+                Spacer(modifier = Modifier.width(14.dp))
                 Column {
                     Text(
                         text = userName,
                         color = MaterialTheme.colorScheme.onBackground,
-                        fontSize = 20.sp,
+                        fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
                         text = "$userRole • $userCompany",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 14.sp
+                        fontSize = 13.sp
                     )
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Datos de contacto
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(12.dp)) {
                     Text(
                         text = "Datos de contacto",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 14.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
                     )
-                    Spacer(modifier = Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(10.dp))
                     
                     ProfileRow(label = "Correo", value = userEmail)
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.background)
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.background)
                     ProfileRow(label = "Teléfono", value = userPhone)
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.background)
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.background)
                     ProfileRow(label = "Rol", value = userRole)
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Preferencias
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
+                shape = RoundedCornerShape(14.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(12.dp)) {
                     Text(
                         text = "Preferencias",
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 14.sp,
+                        fontSize = 13.sp,
                         fontWeight = FontWeight.Bold
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    Spacer(modifier = Modifier.height(6.dp))
                     
                     PreferenceSwitchRow(
                         label = "Modo Oscuro",
                         checked = isDarkMode,
                         onCheckedChange = onDarkModeChange
                     )
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.background)
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp), color = MaterialTheme.colorScheme.background)
                     PreferenceSwitchRow(
                         label = "Alertas vencidas",
                         checked = alertsEnabled,
                         onCheckedChange = { alertsEnabled = it }
                     )
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.background)
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp), color = MaterialTheme.colorScheme.background)
                     PreferenceSwitchRow(
                         label = "Recordatorios por correo",
                         checked = emailRemindersEnabled,
@@ -211,37 +211,40 @@ fun ProfileScreen(
                 }
             }
 
-            Spacer(modifier = Modifier.height(16.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Administración (Solo Administradores)
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Administración",
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        fontSize = 14.sp,
-                        fontWeight = FontWeight.Bold
-                    )
-                    Spacer(modifier = Modifier.height(16.dp))
-                    
-                    AdminActionRow(label = "Gestionar Vehículos", onClick = onManageVehicles)
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.background)
-                    AdminActionRow(label = "Gestionar Usuarios", onClick = onManageUsers)
+            if (userRole.equals("Administrador", ignoreCase = true)) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(14.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text(
+                            text = "Administración",
+                            color = MaterialTheme.colorScheme.onSurfaceVariant,
+                            fontSize = 13.sp,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(10.dp))
+                        
+                        AdminActionRow(label = "Gestionar Vehículos", onClick = onManageVehicles)
+                        HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.background)
+                        AdminActionRow(label = "Gestionar Usuarios", onClick = onManageUsers)
+                    }
                 }
+                Spacer(modifier = Modifier.height(10.dp))
             }
 
-            Spacer(modifier = Modifier.height(32.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             // Botones de acción
             Button(
                 onClick = { /* Cambiar contraseña */ },
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp),
+                    .height(48.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(
                     containerColor = if (isDarkMode) Color(0xFF3A3A3C) else Color(0xFFF2F2F7),
@@ -251,13 +254,13 @@ fun ProfileScreen(
                 Text(text = "Cambiar contraseña", fontWeight = FontWeight.SemiBold)
             }
 
-            Spacer(modifier = Modifier.height(12.dp))
+            Spacer(modifier = Modifier.height(10.dp))
 
             OutlinedButton(
                 onClick = onLogout,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(50.dp),
+                    .height(48.dp),
                 shape = RoundedCornerShape(12.dp),
                 border = BorderStroke(1.dp, BomberosRed),
                 colors = ButtonDefaults.outlinedButtonColors(
@@ -266,6 +269,8 @@ fun ProfileScreen(
             ) {
                 Text(text = "Cerrar sesión", fontWeight = FontWeight.SemiBold)
             }
+
+            Spacer(modifier = Modifier.height(80.dp))
         }
     }
 }

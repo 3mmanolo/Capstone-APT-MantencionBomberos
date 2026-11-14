@@ -128,7 +128,7 @@ fun AddUserScreen(onBack: () -> Unit) {
 
             // Contraseña inicial
             Column(modifier = Modifier.fillMaxWidth()) {
-                Text(text = "Contraseña inicial (opcional)", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
+                Text(text = "Contraseña inicial", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 14.sp)
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
                     value = password,
@@ -274,8 +274,8 @@ fun AddUserScreen(onBack: () -> Unit) {
 
                 Button(
                     onClick = {
-                        if (nombre.isBlank() || correo.isBlank()) {
-                            errorMessage = "Por favor ingresa nombre y correo."
+                        if (nombre.isBlank() || correo.isBlank() || password.isBlank()) {
+                            errorMessage = "Por favor ingresa nombre, correo y contraseña."
                             return@Button
                         }
                         isLoading = true
@@ -289,14 +289,20 @@ fun AddUserScreen(onBack: () -> Unit) {
                                     rol = selectedRol,
                                     companiaId = compIndex,
                                     telefono = telefono,
-                                    password = password.ifBlank { "admin123" }
+                                    password = password
                                 )
                                 val response = RetrofitClient.apiService.guardarUsuario(request)
                                 isLoading = false
                                 if (response.isSuccessful && response.body()?.success == true) {
                                     onBack()
                                 } else {
-                                    errorMessage = response.body()?.message ?: "Error al guardar usuario."
+                                    val errorJson = try { response.errorBody()?.string() } catch (e: Exception) { null }
+                                    val msg = if (errorJson != null && errorJson.contains("message")) {
+                                        try {
+                                            com.google.gson.JsonParser.parseString(errorJson).asJsonObject.get("message").asString
+                                        } catch (e: Exception) { null }
+                                    } else null
+                                    errorMessage = msg ?: response.body()?.message ?: "Error al guardar usuario (${response.code()})."
                                 }
                             } catch (e: Exception) {
                                 isLoading = false

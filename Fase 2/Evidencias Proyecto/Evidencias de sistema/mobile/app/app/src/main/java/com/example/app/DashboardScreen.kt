@@ -458,10 +458,9 @@ fun MainDashboardContent(onVehicleClick: (Vehiculo) -> Unit) {
                     val stats = listOf(
                         StatItem("Vehículos totales", totalCount, MaterialTheme.colorScheme.onBackground),
                         StatItem("Operativos", operativosCount, StatusGreen),
-                        StatItem("Por vencer", porVencerCount, StatusOrange),
-                        StatItem("Alertas vencidas", vencidosCount, StatusRed)
+                        StatItem("En mantenimiento", porVencerCount, Color(0xFF854F0B))
                     )
-                    
+
                     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             StatCard(stats[0], modifier = Modifier.weight(1f))
@@ -469,7 +468,7 @@ fun MainDashboardContent(onVehicleClick: (Vehiculo) -> Unit) {
                         }
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(12.dp)) {
                             StatCard(stats[2], modifier = Modifier.weight(1f))
-                            StatCard(stats[3], modifier = Modifier.weight(1f))
+                            Spacer(modifier = Modifier.weight(1f))
                         }
                     }
                 }
