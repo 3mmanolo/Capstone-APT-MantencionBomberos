@@ -485,6 +485,10 @@ def api_notificaciones(request):
     notificaciones = []
 
     for v in Vehiculo.objects.select_related('id_compania').all():
+        # Si el vehículo está operativo y su fecha de mantención aún no ha vencido, no generar notificaciones
+        if (v.estado or '').strip().lower() == 'operativo' and v.proxima_mantencion and v.proxima_mantencion >= hoy:
+            continue
+
         if v.proxima_mantencion:
             dias = (v.proxima_mantencion - hoy).days
             if dias < 0:

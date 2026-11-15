@@ -323,7 +323,7 @@ fun AddVehicleScreen(onBack: () -> Unit) {
                 OutlinedTextField(
                     value = proximaMantencion,
                     onValueChange = { proximaMantencion = it },
-                    placeholder = { Text("YYYY-MM-DD", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
+                    placeholder = { Text("dd-mm-aaaa", color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.5f)) },
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(

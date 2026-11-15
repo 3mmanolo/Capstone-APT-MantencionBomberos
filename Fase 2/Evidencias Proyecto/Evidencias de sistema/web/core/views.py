@@ -471,7 +471,8 @@ def _estado_visual_vehiculo(vehiculo, hoy):
     dias = (vehiculo.proxima_mantencion - hoy).days
     if dias < 0:
         return {'status': 'danger', 'label': 'Mantención vencida'}
-    # La alerta "por vencer" se evalúa por fecha aunque el vehículo esté operativo
+    if (vehiculo.estado or '').strip().lower() == 'operativo':
+        return {'status': 'green', 'label': 'Operativo'}
     if dias <= DIAS_ALERTA_VEHICULO:
         label = 'Vence hoy' if dias == 0 else f"Vence en {dias} día{'s' if dias != 1 else ''}"
         return {'status': 'amber', 'label': label}

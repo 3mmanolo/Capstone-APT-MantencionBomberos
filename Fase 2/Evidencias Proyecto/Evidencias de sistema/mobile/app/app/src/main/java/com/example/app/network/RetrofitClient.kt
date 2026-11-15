@@ -14,7 +14,7 @@ object RetrofitClient {
     private const val PREFS_NAME = "retrofit_prefs"
     private const val KEY_SERVER_URL = "server_url"
     const val DEFAULT_EMULATOR_URL = "http://10.0.2.2:8000/"
-    const val DEFAULT_LOCAL_URL = "http://10.106.35.203:8000/"
+    const val DEFAULT_LOCAL_URL = "http://172.24.122.203:8000/"
 
     private var sharedPreferences: SharedPreferences? = null
 

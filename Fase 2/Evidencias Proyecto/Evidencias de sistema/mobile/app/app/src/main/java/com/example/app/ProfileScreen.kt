@@ -90,13 +90,12 @@ fun ProfileScreen(
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Header Compacto Edge-to-Edge
+        // Header idéntico a DashboardScreen
         Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .background(BomberosBackground)
-                .statusBarsPadding()
-                .padding(horizontal = 16.dp, vertical = 12.dp)
+                .padding(horizontal = 16.dp, vertical = 20.dp)
         ) {
             Text(
                 text = "Perfil de usuario",
