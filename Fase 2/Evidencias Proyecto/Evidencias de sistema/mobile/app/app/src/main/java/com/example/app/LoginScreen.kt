@@ -338,6 +338,12 @@ fun LoginScreen(
                         ) 
                     },
                     singleLine = true,
+                    textStyle = androidx.compose.ui.text.TextStyle(
+                        textAlign = TextAlign.Center,
+                        fontSize = 22.sp,
+                        fontWeight = FontWeight.Bold,
+                        letterSpacing = 6.sp
+                    ),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                     shape = RoundedCornerShape(12.dp),
                     colors = OutlinedTextFieldDefaults.colors(

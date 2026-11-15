@@ -213,7 +213,7 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(10.dp))
 
             // Administración (Solo Administradores)
-            if (userRole.equals("Administrador", ignoreCase = true)) {
+            if (userRole.contains("admin", ignoreCase = true) || userRole.equals("Administrador", ignoreCase = true) || userRole.equals("Admin", ignoreCase = true)) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
