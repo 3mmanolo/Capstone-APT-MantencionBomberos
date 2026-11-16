@@ -48,6 +48,20 @@ from django.utils import timezone
 
 User = get_user_model()
 
+MSG_SIN_CORREO = "Tu cuenta no tiene un correo registrado. Contacta al administrador."
+
+
+def correo_de_usuario(user):
+    """Correo válido al que enviar el código 2FA, o '' si la cuenta no tiene uno.
+    Nunca usa el nombre de usuario como dirección."""
+    perfil = getattr(user, 'perfil', None)
+    for correo in (getattr(perfil, 'email', None), user.email):
+        correo = (correo or '').strip()
+        if '@' in correo:
+            return correo
+    return ''
+
+
 @ratelimit(key='ip', rate='5/m', method='POST', block=False)
 def index(request):
     # Si el usuario hace clic en "Volver al login", limpiamos el estado 2FA en sesión
@@ -109,14 +123,17 @@ def index(request):
             try:
                 user = User.objects.get(pk=user_id)
                 perfil = getattr(user, 'perfil', None)
-                if perfil:
+                correo_destino = correo_de_usuario(user)
+                if perfil and not correo_destino:
+                    error = MSG_SIN_CORREO
+                    esperando_2fa = True
+                elif perfil:
                     codigo_aleatorio = f"{secrets.randbelow(900000) + 100000}"
                     perfil.codigo_2fa = codigo_aleatorio
                     perfil.expiracion_2fa = timezone.now() + timezone.timedelta(minutes=5)
                     perfil.save()
                     
                     # Usar el campo mail del perfil (o email si aplica como respaldo)
-                    correo_destino = getattr(perfil, 'mail', None) or getattr(perfil, 'email', None) or user.email or user.username
                     send_mail(
                         subject='Nuevo Código de Verificación - Sistema Bomberos',
                         message=f'Tu nuevo código de verificación es: {codigo_aleatorio}. Expira en 5 minutos.',
@@ -183,14 +200,15 @@ def index(request):
 
                 if user is not None:
                     perfil = getattr(user, 'perfil', None)
-                    if perfil:
+                    if perfil and not correo_de_usuario(user):
+                        error = MSG_SIN_CORREO
+                    elif perfil:
                         codigo_aleatorio = f"{secrets.randbelow(900000) + 100000}"
                         perfil.codigo_2fa = codigo_aleatorio
                         perfil.expiracion_2fa = timezone.now() + timezone.timedelta(minutes=5)
                         perfil.save()
 
-                        # Tomar el correo desde el campo mail del perfil
-                        correo_destino = getattr(perfil, 'mail', None) or getattr(perfil, 'email', None) or user.email or username_input
+                        correo_destino = correo_de_usuario(user)
                         try:
                             send_mail(
                                 subject='Código de Verificación - Sistema Bomberos',
@@ -268,7 +286,9 @@ def vehidetalle(request, vehiculo_id):
     vehiculo = get_object_or_404(Vehiculo, pk=vehiculo_id)
     mantenciones = Mantencion.objects.filter(id_vehi=vehiculo)
     
+    perfil_usuario, current_user_data = _datos_usuario_actual(request)
     context = {
+        'current_user': current_user_data,
         'vehiculo': vehiculo,
         'mantenciones': mantenciones,
     }
@@ -471,8 +491,6 @@ def _estado_visual_vehiculo(vehiculo, hoy):
     dias = (vehiculo.proxima_mantencion - hoy).days
     if dias < 0:
         return {'status': 'danger', 'label': 'Mantención vencida'}
-    if (vehiculo.estado or '').strip().lower() == 'operativo':
-        return {'status': 'green', 'label': 'Operativo'}
     if dias <= DIAS_ALERTA_VEHICULO:
         label = 'Vence hoy' if dias == 0 else f"Vence en {dias} día{'s' if dias != 1 else ''}"
         return {'status': 'amber', 'label': label}

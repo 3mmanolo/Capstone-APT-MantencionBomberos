@@ -80,7 +80,7 @@ class AlertasTests(Base):
         self.assertEqual(self._estado(-1), 'danger')                 # vencida
         self.assertEqual(self._estado(5), 'amber')                   # por vencer (defecto 55)
         self.assertEqual(self._estado(30), 'green')                  # operativo
-        self.assertEqual(self._estado(5, 'en mantención'), 'gray')   # en el taller
+        self.assertEqual(self._estado(5, 'en mantención'), 'amber')  # en el taller (el equipo lo pasó a ámbar el 15/11)
 
 
 class AutenticacionTests(Base):
@@ -201,6 +201,7 @@ class WebTests(Base):
         r = self.client.get('/usuarios/')
         self.assertContains(r, '<option value="Chofer">Chofer</option>', html=True)   # el rol Chofer está en el formulario
         r = self.client.post('/usuarios/', {'action': 'save', 'edit_id': perfil.pk, 'nombre': 'Chofer Editado',
+                                            'username': 'chofer.prueba',  # campo obligatorio desde el 15/11
                                             'email': '', 'rol': 'Chofer', 'compania': self.comp.pk})
         self.assertEqual(r.status_code, 302)
         perfil.refresh_from_db()
@@ -226,3 +227,58 @@ class WebTests(Base):
             self.assertTrue(r.content.startswith(b'%PDF'))                                 # defecto 41
         r = self.api('get', f'/api/vehiculos/{self.vehiculo.pk}/pdf/', self.admin)
         self.assertTrue(r.content.startswith(b'%PDF'))
+
+
+class CorreccionesFinalesTests(Base):
+    """Correcciones del 16/11/2026: correo 2FA, fecha de término, eliminar usuario, compañías y menú."""
+
+    def _sin_correo(self):
+        user = User.objects.create_user(username='sin.correo', email='', password=CLAVE)
+        Usuario.objects.create(user=user, nombre='Sin Correo', rol='Chofer', id_compania=self.comp, email='')
+        return user
+
+    def test_api_login_sin_correo_avisa(self):
+        self._sin_correo()
+        r = self.client.post('/api/login/', json.dumps({'username': 'sin.correo', 'password': CLAVE}),
+                             content_type='application/json')
+        self.assertEqual(r.status_code, 400)
+        self.assertIn('no tiene un correo', r.json()['message'])
+        self.assertEqual(len(mail.outbox), 0)              # no se intenta enviar al nombre de usuario
+
+    def test_web_login_sin_correo_avisa(self):
+        self._sin_correo()
+        r = self.client.post('/', {'username': 'sin.correo', 'password': CLAVE})
+        self.assertContains(r, 'no tiene un correo')
+        self.assertEqual(len(mail.outbox), 0)
+
+    def test_registrar_mantencion_guarda_fecha_termino(self):
+        fecha = self.hoy + datetime.timedelta(days=10)
+        proxima_antes = self.vehiculo.proxima_mantencion
+        r = self.api('post', '/api/registrar-mantencion/', self.admin,
+                     {'vehiculo_id': self.vehiculo.pk, 'tipo': 'Preventiva', 'fecha_ter': fecha.isoformat()})
+        self.assertEqual(r.status_code, 200)
+        self.assertEqual(Mantencion.objects.get(pk=r.json()['id']).fecha_ter, fecha)
+        self.vehiculo.refresh_from_db()
+        self.assertEqual(self.vehiculo.proxima_mantencion, proxima_antes)  # ya no se pisa la próxima mantención
+
+    def test_eliminar_usuario_api(self):
+        perfil_vol = Usuario.objects.get(user=self.vol)
+        perfil_admin = Usuario.objects.get(user=self.admin)
+        self.assertEqual(self.api('delete', f'/api/usuarios/{perfil_admin.pk}/eliminar/', self.vol).status_code, 403)
+        self.assertEqual(self.api('delete', f'/api/usuarios/{perfil_admin.pk}/eliminar/', self.admin).status_code, 400)
+        r = self.api('delete', f'/api/usuarios/{perfil_vol.pk}/eliminar/', self.admin)
+        self.assertEqual(r.status_code, 200)
+        self.assertFalse(User.objects.filter(pk=self.vol.pk).exists())
+
+    def test_companias_api(self):
+        r = self.api('get', '/api/companias/', self.vol)
+        self.assertEqual(r.status_code, 200)
+        self.assertIn({'id': self.comp.pk, 'nombre': 'Compañía 1ª'}, r.json()['companias'])
+        self.assertEqual(self.client.get('/api/companias/').status_code, 401)
+
+    def test_menu_detalle_muestra_nombre_del_perfil(self):
+        self.client.force_login(self.admin)
+        nombre = Usuario.objects.get(user=self.admin).nombre
+        self.assertContains(self.client.get(f'/vehidetalle/{self.vehiculo.pk}/'), nombre)
+        self.assertContains(self.client.get(f'/detalle/{self.vehiculo.pk}/'), nombre)
+

@@ -1,5 +1,7 @@
 package com.example.app
 
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
 import android.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -49,6 +51,9 @@ fun AdminVehiclesScreen(
                             tipo = dto.tipo,
                             anio = dto.anio,
                             estado = dto.estado,
+                            companiaId = dto.companiaId,
+                            kilometraje = dto.kilometraje,
+                            proximaMantencion = dto.proximaMantencion,
                             color = color
                         )
                     }
@@ -63,6 +68,35 @@ fun AdminVehiclesScreen(
 
     LaunchedEffect(Unit) {
         fetchVehicles()
+    }
+
+    val context = LocalContext.current
+    var vehiculoAEliminar by remember { mutableStateOf<AdminVehicle?>(null) }
+    vehiculoAEliminar?.let { v ->
+        AlertDialog(
+            onDismissRequest = { vehiculoAEliminar = null },
+            title = { Text("Eliminar vehículo") },
+            text = { Text("¿Eliminar el vehículo \"${v.name}\" (patente ${v.patente})? Esta acción no se puede deshacer.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    vehiculoAEliminar = null
+                    coroutineScope.launch {
+                        try {
+                            val r = RetrofitClient.apiService.eliminarVehiculo(v.realId)
+                            if (r.isSuccessful && r.body()?.success == true) {
+                                Toast.makeText(context, "Vehículo eliminado.", Toast.LENGTH_SHORT).show()
+                                fetchVehicles()
+                            } else {
+                                Toast.makeText(context, mensajeDeError(r, "No se pudo eliminar el vehículo."), Toast.LENGTH_LONG).show()
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Error de conexión: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }) { Text("Eliminar", color = BomberosRed) }
+            },
+            dismissButton = { TextButton(onClick = { vehiculoAEliminar = null }) { Text("Cancelar") } }
+        )
     }
 
     Column(
@@ -140,16 +174,7 @@ fun AdminVehiclesScreen(
                         badgeColor = vehicle.color,
                         initials = vehicle.name.take(1),
                         onEdit = { onEditVehicle(vehicle) },
-                        onDelete = {
-                            coroutineScope.launch {
-                                try {
-                                    RetrofitClient.apiService.eliminarVehiculo(vehicle.realId)
-                                    fetchVehicles()
-                                } catch (e: Exception) {
-                                    // Silencioso
-                                }
-                            }
-                        }
+                        onDelete = { vehiculoAEliminar = vehicle }
                     )
                 }
             }
@@ -160,8 +185,12 @@ fun AdminVehiclesScreen(
 @Composable
 fun AdminUsersScreen(onBack: () -> Unit, onAddUser: () -> Unit, onEditUser: (AdminUser) -> Unit) {
     var users by remember { mutableStateOf<List<AdminUser>>(emptyList()) }
+    var recargarUsuarios by remember { mutableStateOf(0) }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    var usuarioAEliminar by remember { mutableStateOf<AdminUser?>(null) }
 
-    LaunchedEffect(Unit) {
+    LaunchedEffect(recargarUsuarios) {
         try {
             val response = RetrofitClient.apiService.getUsuarios()
             if (response.isSuccessful && response.body()?.success == true) {
@@ -173,6 +202,7 @@ fun AdminUsersScreen(onBack: () -> Unit, onAddUser: () -> Unit, onEditUser: (Adm
                         email = dto.email,
                         compania = dto.compania,
                         role = dto.rol,
+                        companiaId = dto.companiaId,
                         color = if (dto.rol.lowercase().contains("admin")) StatusRed else StatusGreen
                     )
                 }
@@ -180,6 +210,33 @@ fun AdminUsersScreen(onBack: () -> Unit, onAddUser: () -> Unit, onEditUser: (Adm
         } catch (e: Exception) {
             users = emptyList()
         }
+    }
+
+    usuarioAEliminar?.let { u ->
+        AlertDialog(
+            onDismissRequest = { usuarioAEliminar = null },
+            title = { Text("Eliminar usuario") },
+            text = { Text("¿Eliminar a \"${u.name}\" del sistema? Perderá el acceso a la web y a la app.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    usuarioAEliminar = null
+                    coroutineScope.launch {
+                        try {
+                            val r = RetrofitClient.apiService.eliminarUsuario(u.realId)
+                            if (r.isSuccessful && r.body()?.success == true) {
+                                Toast.makeText(context, "Usuario eliminado.", Toast.LENGTH_SHORT).show()
+                                recargarUsuarios++
+                            } else {
+                                Toast.makeText(context, mensajeDeError(r, "No se pudo eliminar el usuario."), Toast.LENGTH_LONG).show()
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(context, "Error de conexión: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                        }
+                    }
+                }) { Text("Eliminar", color = BomberosRed) }
+            },
+            dismissButton = { TextButton(onClick = { usuarioAEliminar = null }) { Text("Cancelar") } }
+        )
     }
 
     Column(
@@ -251,7 +308,7 @@ fun AdminUsersScreen(onBack: () -> Unit, onAddUser: () -> Unit, onEditUser: (Adm
                     badgeColor = user.color,
                     initials = user.initials,
                     onEdit = { onEditUser(user) },
-                    onDelete = { }
+                    onDelete = { usuarioAEliminar = user }
                 )
             }
         }
@@ -388,5 +445,5 @@ fun AdminCardUI(
     }
 }
 
-data class AdminVehicle(val name: String, val realId: Int = 0, val patente: String, val compania: String, val tipo: String, val anio: String, val estado: String, val color: Color)
-data class AdminUser(val initials: String, val realId: Int = 0, val name: String, val email: String, val compania: String, val role: String, val color: Color)
+data class AdminVehicle(val name: String, val realId: Int = 0, val patente: String, val compania: String, val tipo: String, val anio: String, val estado: String, val color: Color, val companiaId: Int? = null, val kilometraje: Double = 0.0, val proximaMantencion: String = "")
+data class AdminUser(val initials: String, val realId: Int = 0, val name: String, val email: String, val compania: String, val role: String, val color: Color, val companiaId: Int? = null)

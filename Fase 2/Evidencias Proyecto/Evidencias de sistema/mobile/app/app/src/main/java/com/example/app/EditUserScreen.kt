@@ -40,7 +40,8 @@ fun EditUserScreen(
     var nuevaPassword by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    val companias = listOf("Compañía 1ª", "Compañía 2ª", "Compañía 3ª", "Compañía 4ª")
+    val companiasApi = rememberCompanias()
+    val companias = companiasApi.map { it.nombre }
     var selectedCompania by remember { mutableStateOf(user.compania) }
     var expandedCompania by remember { mutableStateOf(false) }
 
@@ -68,13 +69,13 @@ fun EditUserScreen(
                         errorMessage = ""
                         coroutineScope.launch {
                             try {
-                                val compIndex = companias.indexOf(selectedCompania) + 1
+                                val compId = idCompania(companiasApi, selectedCompania)
                                 val request = GuardarUsuarioRequest(
                                     id = user.realId,
                                     nombre = nombre,
                                     email = correo,
                                     rol = selectedRol,
-                                    companiaId = if (compIndex > 0) compIndex else 1,
+                                    companiaId = compId,
                                     telefono = telefono,
                                     password = nuevaPassword.ifBlank { null }
                                 )
@@ -85,7 +86,7 @@ fun EditUserScreen(
                                     showSuccessDialog = true
                                 } else {
                                     showConfirmDialog = false
-                                    errorMessage = response.body()?.message ?: "Error al actualizar usuario."
+                                    errorMessage = mensajeDeError(response, "Error al actualizar usuario.")
                                 }
                             } catch (e: Exception) {
                                 isLoading = false

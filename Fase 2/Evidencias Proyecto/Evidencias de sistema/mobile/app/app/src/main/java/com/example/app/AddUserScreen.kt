@@ -36,8 +36,10 @@ fun AddUserScreen(onBack: () -> Unit) {
     var password by remember { mutableStateOf("") }
     var passwordVisible by remember { mutableStateOf(false) }
 
-    val companias = listOf("Compañía 1ª", "Compañía 2ª", "Compañía 3ª", "Compañía 4ª")
-    var selectedCompania by remember { mutableStateOf(companias[0]) }
+    val companiasApi = rememberCompanias()
+    val companias = companiasApi.map { it.nombre }
+    var selectedCompania by remember { mutableStateOf("") }
+    LaunchedEffect(companias) { if (selectedCompania.isBlank() && companias.isNotEmpty()) selectedCompania = companias[0] }
     var expandedCompania by remember { mutableStateOf(false) }
 
     val roles = listOf("Administrador", "Encargado de flota", "Chofer")
@@ -282,12 +284,12 @@ fun AddUserScreen(onBack: () -> Unit) {
                         errorMessage = ""
                         coroutineScope.launch {
                             try {
-                                val compIndex = companias.indexOf(selectedCompania) + 1
+                                val compId = idCompania(companiasApi, selectedCompania)
                                 val request = GuardarUsuarioRequest(
                                     nombre = nombre,
                                     email = correo,
                                     rol = selectedRol,
-                                    companiaId = compIndex,
+                                    companiaId = compId,
                                     telefono = telefono,
                                     password = password
                                 )

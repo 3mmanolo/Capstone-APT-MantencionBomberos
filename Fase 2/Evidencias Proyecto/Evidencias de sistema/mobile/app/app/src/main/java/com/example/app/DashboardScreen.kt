@@ -1,9 +1,5 @@
 package com.example.app
 
-object NotificationSessionTracker {
-    val shownKeys = mutableSetOf<String>()
-}
-
 import androidx.activity.compose.BackHandler
 import android.content.pm.PackageManager
 import android.os.Build
@@ -37,6 +33,11 @@ import com.example.app.network.RetrofitClient
 import com.example.app.network.VehiculoDto
 import com.example.app.ui.theme.*
 import kotlinx.coroutines.launch
+
+/** Notificaciones ya mostradas en esta sesión (para no repetirlas en cada recarga). */
+object NotificationSessionTracker {
+    val shownKeys = mutableSetOf<String>()
+}
 
 data class StatItem(val label: String, val value: String, val valueColor: Color)
 data class Vehiculo(

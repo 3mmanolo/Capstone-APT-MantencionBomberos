@@ -33,8 +33,10 @@ fun AddVehicleScreen(onBack: () -> Unit) {
     var nombre by remember { mutableStateOf("") }
     var patente by remember { mutableStateOf("") }
 
-    val companias = listOf("Compañía 1ª", "Compañía 2ª", "Compañía 3ª", "Compañía 4ª")
-    var selectedCompania by remember { mutableStateOf(companias[0]) }
+    val companiasApi = rememberCompanias()
+    val companias = companiasApi.map { it.nombre }
+    var selectedCompania by remember { mutableStateOf("") }
+    LaunchedEffect(companias) { if (selectedCompania.isBlank() && companias.isNotEmpty()) selectedCompania = companias[0] }
     var expandedCompania by remember { mutableStateOf(false) }
 
     val tipos = listOf("Carro bomba", "Rescate", "Hazmat", "Forestal", "Agua")
@@ -65,7 +67,7 @@ fun AddVehicleScreen(onBack: () -> Unit) {
                         errorMessage = ""
                         coroutineScope.launch {
                             try {
-                                val compIndex = companias.indexOf(selectedCompania) + 1
+                                val compId = idCompania(companiasApi, selectedCompania)
                                 val km = kilometraje.toDoubleOrNull() ?: 0.0
                                 val request = GuardarVehiculoRequest(
                                     nombre = nombre,
@@ -73,7 +75,7 @@ fun AddVehicleScreen(onBack: () -> Unit) {
                                     tipo = selectedTipo,
                                     anio = anio.ifBlank { "2024" },
                                     kilometraje = km,
-                                    companiaId = compIndex,
+                                    companiaId = compId,
                                     proximaMantencion = proximaMantencion.ifBlank { null }
                                 )
                                 val response = RetrofitClient.apiService.guardarVehiculo(request)
@@ -83,7 +85,7 @@ fun AddVehicleScreen(onBack: () -> Unit) {
                                     showSuccessDialog = true
                                 } else {
                                     showConfirmDialog = false
-                                    errorMessage = response.body()?.message ?: "Error al guardar vehículo en la base de datos."
+                                    errorMessage = mensajeDeError(response, "Error al guardar vehículo en la base de datos.")
                                 }
                             } catch (e: Exception) {
                                 isLoading = false

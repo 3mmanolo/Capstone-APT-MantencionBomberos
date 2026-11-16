@@ -1,5 +1,10 @@
 package com.example.app
 
+import android.widget.Toast
+import androidx.compose.ui.platform.LocalContext
+import com.example.app.network.GuardarVehiculoRequest
+import com.example.app.network.RetrofitClient
+import kotlinx.coroutines.launch
 import android.R
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.background
@@ -34,10 +39,14 @@ fun EditVehicleScreen(
     var nombre by remember { mutableStateOf(vehicle.name.split(" • ").last()) }
     var patente by remember { mutableStateOf(vehicle.patente) }
     var anio by remember { mutableStateOf(vehicle.anio) }
-    var kilometraje by remember { mutableStateOf("86.420 km") } // Valor de ejemplo de la captura
-    var proximaMantencion by remember { mutableStateOf("22-08-2026") } // Valor de ejemplo de la captura
+    var kilometraje by remember { mutableStateOf(if (vehicle.kilometraje % 1.0 == 0.0) vehicle.kilometraje.toLong().toString() else vehicle.kilometraje.toString()) }
+    var proximaMantencion by remember { mutableStateOf(vehicle.proximaMantencion) }
+    val context = LocalContext.current
+    val coroutineScope = rememberCoroutineScope()
+    var guardando by remember { mutableStateOf(false) }
 
-    val companias = listOf("Compañía 1ª", "Compañía 2ª", "Compañía 3ª", "Compañía 4ª")
+    val companiasApi = rememberCompanias()
+    val companias = companiasApi.map { it.nombre }
     var selectedCompania by remember { mutableStateOf(vehicle.compania) }
     var expandedCompania by remember { mutableStateOf(false) }
 
@@ -253,7 +262,41 @@ fun EditVehicleScreen(
                 }
 
                 Button(
-                    onClick = { /* Guardar cambios */ },
+                    onClick = {
+                        if (nombre.isBlank()) {
+                            Toast.makeText(context, "Ingresa el nombre del vehículo.", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        guardando = true
+                        coroutineScope.launch {
+                            try {
+                                val km = kilometraje.filter { it.isDigit() || it == '.' }.toDoubleOrNull() ?: 0.0
+                                val response = RetrofitClient.apiService.guardarVehiculo(
+                                    GuardarVehiculoRequest(
+                                        id = vehicle.realId,
+                                        nombre = nombre,
+                                        patente = patente,
+                                        tipo = selectedTipo,
+                                        anio = anio,
+                                        kilometraje = km,
+                                        companiaId = idCompania(companiasApi, selectedCompania),
+                                        proximaMantencion = proximaMantencion.ifBlank { null }
+                                    )
+                                )
+                                guardando = false
+                                if (response.isSuccessful && response.body()?.success == true) {
+                                    Toast.makeText(context, "Vehículo actualizado correctamente.", Toast.LENGTH_LONG).show()
+                                    onBack()
+                                } else {
+                                    Toast.makeText(context, mensajeDeError(response, "No se pudo guardar el vehículo."), Toast.LENGTH_LONG).show()
+                                }
+                            } catch (e: Exception) {
+                                guardando = false
+                                Toast.makeText(context, "Error de conexión: ${e.localizedMessage}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    },
+                    enabled = !guardando,
                     modifier = Modifier.weight(1f).height(55.dp),
                     shape = RoundedCornerShape(12.dp),
                     colors = ButtonDefaults.buttonColors(containerColor = BomberosRed, contentColor = Color.White)

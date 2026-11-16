@@ -23,7 +23,7 @@ from rest_framework.response import Response
 from rest_framework import status
 
 from .models import Vehiculo, Usuario, Compania, Mantencion, TipoMantencion, Insumo, MantencionInsu
-from .views import _estado_visual_vehiculo, ROLES_USUARIO
+from .views import _estado_visual_vehiculo, ROLES_USUARIO, correo_de_usuario, MSG_SIN_CORREO
 from .permissions import EsAdministrador, GestionaFlota, LecturaOAdministrador
 from .validaciones import normalizar_patente, validar_anio, parse_fecha, parse_monto
 from .reportes import respuesta_pdf_vehiculo
@@ -70,6 +70,10 @@ def api_login(request):
     if not perfil:
         return JsonResponse({'success': False, 'message': 'El usuario no tiene un perfil asociado.'}, status=400)
 
+    correo_destino = correo_de_usuario(user)
+    if not correo_destino:
+        return JsonResponse({'success': False, 'message': MSG_SIN_CORREO}, status=400)
+
     # --- NUEVO: Generar y enviar código 2FA por correo ---
     codigo_aleatorio = f"{secrets.randbelow(900000) + 100000}"
     
@@ -79,17 +83,17 @@ def api_login(request):
     perfil.save()
 
     # Enviar correo electrónico
-    correo_destino = user.email or username_input
     try:
         send_mail(
             subject='Código de Verificación - Sistema Bomberos',
             message=f'Hola {perfil.nombre or user.username}, tu código de verificación de doble factor es: {codigo_aleatorio}. Expira en 5 minutos.',
             from_email=settings.DEFAULT_FROM_EMAIL,
             recipient_list=[correo_destino],
-            fail_silently=True,
+            fail_silently=False,
         )
-    except Exception as e:
-        print(f"Advertencia al enviar correo 2FA a {correo_destino}: {e}")
+    except Exception:
+        logger.exception('Error al enviar código 2FA (API)')
+        return JsonResponse({'success': False, 'message': 'No se pudo enviar el código de verificación. Inténtalo más tarde.'}, status=503)
 
     # Retornar señal de que falta el segundo paso
     return JsonResponse({
@@ -130,7 +134,7 @@ def api_verificar_2fa(request):
 
                 token_obj, _ = Token.objects.get_or_create(user=user)
                 nombre = perfil.nombre or (user.get_full_name() or user.username)
-                rol = perfil.rol or ('Administrador' if user.is_superuser else 'Voluntario')
+                rol = perfil.rol or ('Administrador' if user.is_superuser else 'Sin rol')
                 compania_nombre = perfil.id_compania.nombre if perfil.id_compania else 'Sin Compañía'
                 telefono = perfil.telefono or ''
                 is_admin = user.is_superuser or (rol or '').lower() == 'administrador'
@@ -181,7 +185,9 @@ def api_reenviar_2fa(request):
             perfil.expiracion_2fa = timezone.now() + timezone.timedelta(minutes=5)
             perfil.save()
 
-            correo_destino = user.email or user.username
+            correo_destino = correo_de_usuario(user)
+            if not correo_destino:
+                return JsonResponse({'success': False, 'message': MSG_SIN_CORREO}, status=400)
             send_mail(
                 subject='Nuevo Código de Verificación - Sistema Bomberos',
                 message=f'Hola {perfil.nombre or user.username}, tu nuevo código de verificación es: {codigo_aleatorio}. Expira en 5 minutos.',
@@ -379,6 +385,7 @@ def api_registrar_mantencion(request):
     taller = data.get('taller', '').strip() or data.get('respon', '').strip()
     materiales = data.get('materiales', '').strip()
     proxima_fecha = data.get('proxima_mantencion')
+    fecha_ter_raw = data.get('fecha_ter')
 
     v_obj = Vehiculo.objects.filter(pk=vehiculo_id).first() if vehiculo_id else None
     if not v_obj:
@@ -394,6 +401,9 @@ def api_registrar_mantencion(request):
     proxima_val, error = parse_fecha(proxima_fecha)
     if error:
         return JsonResponse({'success': False, 'message': error}, status=400)
+    fecha_ter_val, error = parse_fecha(fecha_ter_raw)
+    if error:
+        return JsonResponse({'success': False, 'message': 'La fecha de término no es válida. ' + error}, status=400)
 
     desc_completa = descripcion
     if materiales:
@@ -408,6 +418,7 @@ def api_registrar_mantencion(request):
             costo_t=costo_val,
             respon=taller,
             registrado_por=request.user,
+            fecha_ter=fecha_ter_val,
         )
 
         v_obj.estado = 'en mantención'
@@ -579,7 +590,7 @@ def api_usuarios(request):
             u_obj = Usuario(user=user_auth)
 
         u_obj.nombre = nombre
-        u_obj.rol = rol or 'Voluntario'
+        u_obj.rol = rol or 'Chofer'
         if compania_obj:
             u_obj.id_compania = compania_obj
         u_obj.telefono = telefono
@@ -599,7 +610,7 @@ def api_perfil(request):
     perfil = getattr(user, 'perfil', None)
 
     nombre = perfil.nombre if (perfil and perfil.nombre) else (user.get_full_name() or user.username)
-    rol = perfil.rol if (perfil and perfil.rol) else ('Administrador' if user.is_superuser else 'Voluntario')
+    rol = perfil.rol if (perfil and perfil.rol) else ('Administrador' if user.is_superuser else 'Sin rol')
     compania_nombre = perfil.id_compania.nombre if (perfil and perfil.id_compania) else 'Sin Compañía'
     telefono = perfil.telefono if perfil else ''
 
@@ -651,3 +662,27 @@ def api_vehiculo_pdf(request, vehiculo_id):
     return respuesta_pdf_vehiculo(vehiculo)
 
 
+@api_view(["DELETE"])
+@permission_classes([IsAuthenticated, EsAdministrador])
+@csrf_exempt
+def api_usuario_eliminar(request, usuario_id):
+    """DELETE /api/usuarios/<id>/eliminar/ - Elimina un usuario (solo administradores).
+    Borra la cuenta de acceso; por CASCADE se eliminan también su perfil y su token."""
+    perfil = Usuario.objects.select_related('user').filter(pk=usuario_id).first()
+    if not perfil:
+        return JsonResponse({'success': False, 'message': 'Usuario no encontrado.'}, status=404)
+    if perfil.user_id == request.user.pk:
+        return JsonResponse({'success': False, 'message': 'No puedes eliminar tu propia cuenta.'}, status=400)
+    if perfil.user:
+        perfil.user.delete()
+    else:
+        perfil.delete()
+    return JsonResponse({'success': True, 'message': 'Usuario eliminado correctamente.'})
+
+
+@api_view(["GET"])
+@permission_classes([IsAuthenticated])
+def api_companias(request):
+    """GET /api/companias/ - Lista de compañías reales (id y nombre) para los formularios de la app."""
+    companias = [{'id': c.pk, 'nombre': c.nombre} for c in Compania.objects.all().order_by('nombre')]
+    return JsonResponse({'success': True, 'companias': companias})
