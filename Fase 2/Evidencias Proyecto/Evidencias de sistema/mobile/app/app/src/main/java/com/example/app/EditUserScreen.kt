@@ -44,7 +44,7 @@ fun EditUserScreen(
     var selectedCompania by remember { mutableStateOf(user.compania) }
     var expandedCompania by remember { mutableStateOf(false) }
 
-    val roles = listOf("Administrador", "Encargado de flota", "Voluntario", "Maquinista")
+    val roles = listOf("Administrador", "Encargado de flota", "Chofer")
     var selectedRol by remember { mutableStateOf(user.role) }
     var expandedRol by remember { mutableStateOf(false) }
 

@@ -40,7 +40,7 @@ fun AddUserScreen(onBack: () -> Unit) {
     var selectedCompania by remember { mutableStateOf(companias[0]) }
     var expandedCompania by remember { mutableStateOf(false) }
 
-    val roles = listOf("Administrador", "Encargado de flota", "Voluntario", "Maquinista")
+    val roles = listOf("Administrador", "Encargado de flota", "Chofer")
     var selectedRol by remember { mutableStateOf(roles[0]) }
     var expandedRol by remember { mutableStateOf(false) }
 
