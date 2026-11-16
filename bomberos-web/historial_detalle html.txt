@@ -1,0 +1,7 @@
+const userScript = document.getElementById('user-data');
+  if (userScript) {
+    const userData = JSON.parse(userScript.textContent);
+    if (userData && (userData.isAdmin || userData.is_admin || userData.role === 'admin' || userData.rol === 'admin')) {
+      document.querySelectorAll(".nav-usuarios, .nav-vehiculos").forEach(el => el.style.display = "flex");
+    }
+  }
