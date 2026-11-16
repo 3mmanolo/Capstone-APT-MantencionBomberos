@@ -14,6 +14,7 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -42,8 +43,8 @@ class MainActivity : ComponentActivity() {
             }
             
             AppTheme(darkTheme = isDarkMode) {
-                var isLoggedIn by remember { mutableStateOf(false) }
-                var isLoading by remember { mutableStateOf(false) }
+                var isLoggedIn by rememberSaveable { mutableStateOf(false) }
+                var isLoading by rememberSaveable { mutableStateOf(false) }
 
                 LaunchedEffect(isLoading) {
                     if (isLoading) {
@@ -63,7 +64,10 @@ class MainActivity : ComponentActivity() {
                             DashboardScreen(
                                 isDarkMode = isDarkMode,
                                 onDarkModeChange = { isDarkMode = it },
-                                onLogout = { isLoggedIn = false },
+                                onLogout = {
+                                    RetrofitClient.authToken = null
+                                    isLoggedIn = false
+                                },
                                 onExitApp = { finish() },
                                 modifier = Modifier.fillMaxSize()
                             )

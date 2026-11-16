@@ -1,5 +1,9 @@
 package com.example.app
 
+object NotificationSessionTracker {
+    val shownKeys = mutableSetOf<String>()
+}
+
 import androidx.activity.compose.BackHandler
 import android.content.pm.PackageManager
 import android.os.Build
@@ -83,12 +87,16 @@ fun DashboardScreen(
             if (response.isSuccessful && response.body()?.success == true) {
                 val notificaciones = response.body()!!.notificaciones
                 notificaciones.forEachIndexed { index, notif ->
-                    NotificationHelper.showNotification(
-                        context = context,
-                        id = 3000 + index,
-                        title = notif.titulo,
-                        message = notif.mensaje
-                    )
+                    val key = "${notif.titulo}_${notif.mensaje}"
+                    if (!NotificationSessionTracker.shownKeys.contains(key)) {
+                        NotificationSessionTracker.shownKeys.add(key)
+                        NotificationHelper.showNotification(
+                            context = context,
+                            id = 3000 + index,
+                            title = notif.titulo,
+                            message = notif.mensaje
+                        )
+                    }
                 }
             }
         } catch (e: Exception) {
@@ -392,12 +400,16 @@ fun MainDashboardContent(onVehicleClick: (Vehiculo) -> Unit) {
             val notifResp = RetrofitClient.apiService.getNotificaciones()
             if (notifResp.isSuccessful && notifResp.body()?.success == true) {
                 notifResp.body()!!.notificaciones.forEachIndexed { index, notif ->
-                    NotificationHelper.showNotification(
-                        context = context,
-                        id = 1000 + index,
-                        title = notif.titulo,
-                        message = notif.mensaje
-                    )
+                    val key = "${notif.titulo}_${notif.mensaje}"
+                    if (!NotificationSessionTracker.shownKeys.contains(key)) {
+                        NotificationSessionTracker.shownKeys.add(key)
+                        NotificationHelper.showNotification(
+                            context = context,
+                            id = 1000 + index,
+                            title = notif.titulo,
+                            message = notif.mensaje
+                        )
+                    }
                 }
             }
         } catch (e: Exception) {

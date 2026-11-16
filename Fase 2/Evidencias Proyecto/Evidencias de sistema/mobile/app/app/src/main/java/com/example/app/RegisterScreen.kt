@@ -429,7 +429,12 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
                 Button(
                     onClick = {
                         if (isSaving) return@Button
-                        val vId = selectedVehiculo?.id ?: 1
+                        val currentVehiculo = selectedVehiculo
+                        if (currentVehiculo == null) {
+                            Toast.makeText(context, "Selecciona un vehículo", Toast.LENGTH_SHORT).show()
+                            return@Button
+                        }
+                        val vId = currentVehiculo.id
                         isSaving = true
                         coroutineScope.launch {
                             try {
@@ -440,7 +445,8 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
                                     costo = costoText,
                                     taller = responsableText,
                                     materiales = materialesText,
-                                    proximaMantencion = fechaTerminoText.ifBlank { "2026-12-31" }
+                                    fechaTer = fechaTerminoText.ifBlank { null },
+                                    proximaMantencion = null
                                 )
                                 val resp = RetrofitClient.apiService.registrarMantencion(req)
                                 isSaving = false

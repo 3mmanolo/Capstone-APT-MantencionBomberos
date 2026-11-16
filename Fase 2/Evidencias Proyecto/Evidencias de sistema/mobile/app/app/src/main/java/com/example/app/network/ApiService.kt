@@ -48,6 +48,12 @@ interface ApiService {
     @POST("api/usuarios/")
     suspend fun guardarUsuario(@Body request: GuardarUsuarioRequest): Response<GenericResponse>
 
+    @DELETE("api/usuarios/{id}/eliminar/")
+    suspend fun eliminarUsuario(@Path("id") id: Int): Response<GenericResponse>
+
+    @GET("api/companias/")
+    suspend fun getCompanias(): Response<CompaniasListResponse>
+
     @GET("api/perfil/")
     suspend fun getPerfil(): Response<PerfilResponse>
 

@@ -15,7 +15,8 @@ data class RegistrarMantencionRequest(
     @SerializedName("costo") val costo: String,
     @SerializedName("taller") val taller: String,
     @SerializedName("materiales") val materiales: String,
-    @SerializedName("proxima_mantencion") val proximaMantencion: String
+    @SerializedName("fecha_ter") val fechaTer: String? = null,
+    @SerializedName("proxima_mantencion") val proximaMantencion: String? = null
 )
 
 data class GuardarVehiculoRequest(
@@ -201,4 +202,14 @@ data class PerfilDto(
     @SerializedName("telefono") val telefono: String,
     @SerializedName("initials") val initials: String,
     @SerializedName("isAdmin") val isAdmin: Boolean?
+)
+
+data class CompaniaDto(
+    @SerializedName("id") val id: Int,
+    @SerializedName("nombre") val nombre: String
+)
+
+data class CompaniasListResponse(
+    @SerializedName("success") val success: Boolean,
+    @SerializedName("companias") val companias: List<CompaniaDto>
 )
