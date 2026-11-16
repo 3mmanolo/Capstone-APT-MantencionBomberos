@@ -66,6 +66,7 @@ fun ProfileScreen(
     var userRole by remember { mutableStateOf("") }
     var userCompany by remember { mutableStateOf("") }
     var userInitials by remember { mutableStateOf("") }
+    var isAdmin by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
         try {
@@ -78,6 +79,7 @@ fun ProfileScreen(
                     userRole = p.rol
                     userCompany = p.compania
                     userInitials = p.initials
+                    isAdmin = p.isAdmin == true
                 }
             }
         } catch (e: Exception) {
@@ -201,19 +203,13 @@ fun ProfileScreen(
                         checked = alertsEnabled,
                         onCheckedChange = { alertsEnabled = it }
                     )
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 6.dp), color = MaterialTheme.colorScheme.background)
-                    PreferenceSwitchRow(
-                        label = "Recordatorios por correo",
-                        checked = emailRemindersEnabled,
-                        onCheckedChange = { emailRemindersEnabled = it }
-                    )
                 }
             }
 
             Spacer(modifier = Modifier.height(10.dp))
 
             // Administración (Solo Administradores)
-            if (userRole.contains("admin", ignoreCase = true) || userRole.equals("Administrador", ignoreCase = true) || userRole.equals("Admin", ignoreCase = true)) {
+            if (isAdmin || userRole.contains("admin", ignoreCase = true) || userRole.equals("Administrador", ignoreCase = true) || userRole.equals("Admin", ignoreCase = true)) {
                 Card(
                     modifier = Modifier.fillMaxWidth(),
                     shape = RoundedCornerShape(14.dp),
@@ -239,22 +235,6 @@ fun ProfileScreen(
             Spacer(modifier = Modifier.height(10.dp))
 
             // Botones de acción
-            Button(
-                onClick = { /* Cambiar contraseña */ },
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(
-                    containerColor = if (isDarkMode) Color(0xFF3A3A3C) else Color(0xFFF2F2F7),
-                    contentColor = MaterialTheme.colorScheme.onBackground
-                )
-            ) {
-                Text(text = "Cambiar contraseña", fontWeight = FontWeight.SemiBold)
-            }
-
-            Spacer(modifier = Modifier.height(10.dp))
-
             OutlinedButton(
                 onClick = onLogout,
                 modifier = Modifier

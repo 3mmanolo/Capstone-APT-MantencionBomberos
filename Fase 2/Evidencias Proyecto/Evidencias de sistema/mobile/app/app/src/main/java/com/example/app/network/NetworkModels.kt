@@ -199,5 +199,6 @@ data class PerfilDto(
     @SerializedName("rol") val rol: String,
     @SerializedName("compania") val compania: String,
     @SerializedName("telefono") val telefono: String,
-    @SerializedName("initials") val initials: String
+    @SerializedName("initials") val initials: String,
+    @SerializedName("isAdmin") val isAdmin: Boolean?
 )

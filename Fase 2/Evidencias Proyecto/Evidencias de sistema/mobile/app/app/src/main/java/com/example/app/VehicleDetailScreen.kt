@@ -385,6 +385,7 @@ fun downloadPdf(realVehicleId: Int, patente: String, context: android.content.Co
             if (response.isSuccessful && response.body() != null) {
                 val body = response.body()!!
                 val fileName = "Informe_${patente}_${System.currentTimeMillis()}.pdf"
+                var savedUri: android.net.Uri? = null
                 
                 if (android.os.Build.VERSION.SDK_INT >= android.os.Build.VERSION_CODES.Q) {
                     val resolver = context.contentResolver
@@ -400,6 +401,7 @@ fun downloadPdf(realVehicleId: Int, patente: String, context: android.content.Co
                                 inputStream.copyTo(outputStream)
                             }
                         }
+                        savedUri = uri
                     }
                 } else {
                     val targetDir = android.os.Environment.getExternalStoragePublicDirectory(android.os.Environment.DIRECTORY_DOWNLOADS)
@@ -410,7 +412,13 @@ fun downloadPdf(realVehicleId: Int, patente: String, context: android.content.Co
                             inputStream.copyTo(outputStream)
                         }
                     }
+                    savedUri = android.net.Uri.fromFile(targetFile)
                 }
+
+                if (savedUri != null) {
+                    com.example.app.network.NotificationHelper.showPdfDownloadNotification(context, savedUri, fileName)
+                }
+
                 kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.Main) {
                     onResult("PDF descargado exitosamente en la carpeta Descargas.")
                 }

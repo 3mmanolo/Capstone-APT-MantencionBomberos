@@ -603,6 +603,12 @@ def api_perfil(request):
     compania_nombre = perfil.id_compania.nombre if (perfil and perfil.id_compania) else 'Sin Compañía'
     telefono = perfil.telefono if perfil else ''
 
+    is_admin = False
+    if hasattr(user, 'perfil') and user.perfil:
+        is_admin = user.is_superuser or (user.perfil.rol and user.perfil.rol.lower() == 'administrador')
+    else:
+        is_admin = user.is_superuser
+
     return JsonResponse({
         'success': True,
         'perfil': {
@@ -611,7 +617,8 @@ def api_perfil(request):
             'rol': rol,
             'compania': compania_nombre,
             'telefono': telefono,
-            'initials': ''.join([w[0].upper() for w in nombre.split()[:2]]) if nombre else 'US'
+            'initials': ''.join([w[0].upper() for w in nombre.split()[:2]]) if nombre else 'US',
+            'isAdmin': is_admin
         }
     })
 

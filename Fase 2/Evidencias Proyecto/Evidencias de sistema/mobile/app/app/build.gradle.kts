@@ -69,9 +69,9 @@ val copyApkTask = tasks.register("copyApkToDesktop") {
         val desktopFolder = File(System.getProperty("user.home"), "OneDrive/Desktop").takeIf { it.exists() }
             ?: File(System.getProperty("user.home"), "Desktop")
         if (apkFile.exists() && desktopFolder.exists()) {
-            val targetFile = File(desktopFolder, "app-bomberos-talcahuano-v35-debug.apk")
+            val targetFile = File(desktopFolder, "bombero-v46-debug.apk")
             apkFile.copyTo(targetFile, overwrite = true)
-            println("APK copiada automáticamente al Escritorio con nuevo nombre v35: ${targetFile.absolutePath}")
+            println("APK copiada automáticamente al Escritorio con nuevo nombre v46: ${targetFile.absolutePath}")
         }
     }
 }
