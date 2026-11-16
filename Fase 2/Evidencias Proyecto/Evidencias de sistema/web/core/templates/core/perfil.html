@@ -25,6 +25,17 @@ body.dark-mode .table {
     border-color: #333 !important;
 }
 
+/* Bloque del switch y filas internas */
+body.dark-mode .dark-mode-setting {
+    background-color: #252525 !important;
+    border: 1px solid #333 !important;
+    color: #e0e0e0 !important;
+}
+
+body.dark-mode .card div[style*="border-top"] {
+    border-top-color: #333 !important;
+}
+
 /* Textos y etiquetas */
 body.dark-mode p, 
 body.dark-mode span, 
@@ -43,6 +54,13 @@ body.dark-mode textarea {
     background-color: #2d2d2d !important;
     color: #fff !important;
     border-color: #444 !important;
+}
+
+/* Botón secundario (Cerrar sesión) */
+body.dark-mode .btn-secondary {
+    background-color: #252525 !important;
+    border-color: #A32D2D !important;
+    color: #ff6b6b !important;
 }</style>
 </head>
 <body>
@@ -115,8 +133,8 @@ body.dark-mode textarea {
             <div style="width:38px; height:22px; border-radius:20px; background:var(--red); position:relative;"><div style="width:16px; height:16px; border-radius:50%; background:#fff; position:absolute; top:3px; right:3px;"></div></div>
           </div>
           <div style="display:flex; justify-content:space-between; align-items:center; padding:8px 0; border-top:1px solid var(--border); font-size:13px;">
-            <span>Recordatorios por correo</span>
-            <div style="width:38px; height:22px; border-radius:20px; background:#D8D6CE; position:relative;"><div style="width:16px; height:16px; border-radius:50%; background:#fff; position:absolute; top:3px; left:3px;"></div></div>
+            <!--<span>Recordatorios por correo</span>-->
+            <!--<div style="width:38px; height:22px; border-radius:20px; background:#D8D6CE; position:relative;"><div style="width:16px; height:16px; border-radius:50%; background:#fff; position:absolute; top:3px; left:3px;"></div></div>-->
           </div>
 
           <div class="dark-mode-setting" style="display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; background: var(--card-bg, #fff); border-radius: 8px; margin-bottom: 15px;">
@@ -139,7 +157,7 @@ body.dark-mode textarea {
         </div>
 
         <div style="display:flex; gap:10px;">
-          <button class="btn-secondary">Cambiar contraseña</button>
+          <!--<button class="btn-secondary">Cambiar contraseña</button>-->
           <a class="btn-secondary" style="border-color:#A32D2D; color:#A32D2D; display:inline-flex; align-items:center;" href="{% url 'logout' %}">Cerrar sesión</a>
         </div>
       </div>

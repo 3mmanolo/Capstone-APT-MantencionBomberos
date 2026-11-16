@@ -23,6 +23,35 @@
       color: #e0e0e0 !important;
       border-color: #333 !important;
   }
+  
+  /* Bloque de usuario interno y alertas */
+  body.dark-mode #user-block {
+      background-color: #252525 !important;
+      border-color: #333 !important;
+  }
+  
+  body.dark-mode div[style*="background:var(--amber-bg)"] {
+      background-color: #2c2416 !important;
+      border: 1px solid #4a3812 !important;
+  }
+  body.dark-mode div[style*="background:var(--amber-bg)"] span,
+  body.dark-mode div[style*="background:var(--amber-bg)"] i {
+      color: #f6ad55 !important;
+  }
+
+  /* Inputs, selects y textareas */
+  body.dark-mode input, 
+  body.dark-mode select, 
+  body.dark-mode textarea {
+      background-color: #2d2d2d !important;
+      color: #fff !important;
+      border-color: #444 !important;
+  }
+
+  /* Líneas divisorias y textos */
+  body.dark-mode div[style*="border-top"] {
+      border-top-color: #333 !important;
+  }
   body.dark-mode p, 
   body.dark-mode span, 
   body.dark-mode h1, 
@@ -31,6 +60,13 @@
   body.dark-mode h4,
   body.dark-mode label {
       color: #e0e0e0 !important;
+  }
+
+  /* Corrección para el texto de los botones secundarios en modo oscuro */
+  body.dark-mode .btn-secondary {
+      background-color: #252525 !important;
+      color: #e0e0e0 !important;
+      border-color: #444 !important;
   }
 </style>
 </head>
@@ -121,7 +157,7 @@
                 <option value="{{ i.pk }}" data-costo="{{ i.costo_uni }}">{{ i.nombre }}{% if i.unidad_m %} ({{ i.unidad_m }}){% endif %} · ${{ i.costo_uni }}</option>
               {% endfor %}
             </select>
-            <input type="number" name="insumo_cant" class="insumo-cant" min="0.01" step="0.01" placeholder="Cantidad">
+            <input type="number" name="insumo_cant" class="insumo-cant" min="0" step="1" placeholder="Cantidad">
             <button type="button" class="btn-secondary btn-quitar-insumo" style="padding:6px 10px;" title="Quitar">✕</button>
           </div>
         </div>

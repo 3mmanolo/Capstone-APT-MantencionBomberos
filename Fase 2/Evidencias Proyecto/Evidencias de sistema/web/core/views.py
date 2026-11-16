@@ -465,9 +465,9 @@ def _estado_visual_vehiculo(vehiculo, hoy):
     """Calcula el estado visual (pill) de un vehiculo a partir de su estado
     operativo y de la fecha de proxima_mantencion real (no inventada)."""
     if (vehiculo.estado or '').strip().lower() == 'en mantención':
-        return {'status': 'gray', 'label': 'En mantención'}
+        return {'status': 'amber', 'label': 'En mantención'}
     if not vehiculo.proxima_mantencion:
-        return {'status': 'gray', 'label': 'Sin programar'}
+        return {'status': 'amber', 'label': 'Sin programar'}
     dias = (vehiculo.proxima_mantencion - hoy).days
     if dias < 0:
         return {'status': 'danger', 'label': 'Mantención vencida'}
@@ -650,7 +650,7 @@ from .models import Usuario
 
 # core/views.py
 
-ROLES_USUARIO = ['Administrador', 'Encargado de flota', 'Voluntario', 'Chofer']
+ROLES_USUARIO = ['Administrador', 'Encargado de flota', 'Chofer']
 
 
 @login_required(login_url='index')
@@ -678,7 +678,6 @@ def usuarios(request):
                 if perfil and perfil.user_id == request.user.pk:
                     messages.error(request, "No puedes eliminar tu propia cuenta.")
                 elif perfil and perfil.user:
-                    # Borra la cuenta de acceso: por CASCADE se borran también su perfil y su token de API
                     perfil.user.delete()
                 elif perfil:
                     perfil.delete()
@@ -686,6 +685,7 @@ def usuarios(request):
 
         elif action == 'save':
             user_id = request.POST.get('edit_id')
+            username = request.POST.get('username', '').strip()
             nombre = request.POST.get('nombre')
             email = request.POST.get('email', '').strip().lower()
             rol = request.POST.get('rol')
@@ -694,11 +694,14 @@ def usuarios(request):
 
             # --- CASO 1: EDICIÓN DE UN USUARIO EXISTENTE ---
             if user_id:
-                # Se valida todo ANTES de guardar nada (defecto 43: antes guardaba el correo
-                # aunque otro campo fallara, no validaba el rol y daba error 500 con datos inválidos).
                 u = get_object_or_404(Usuario.objects.select_related('user'), pk=user_id)
                 nombre = (nombre or '').strip()
                 compania_obj = Compania.objects.filter(pk=compania_id).first() if compania_id else None
+
+                if not username:
+                    errores.append('Ingresa el nombre de usuario.')
+                elif User.objects.filter(username__iexact=username).exclude(pk=u.user.pk).exists():
+                    errores.append('Ya existe otro usuario con ese nombre de usuario.')
 
                 if not nombre:
                     errores.append('Ingresa el nombre completo.')
@@ -709,18 +712,14 @@ def usuarios(request):
                 if compania_id and not compania_obj:
                     errores.append('Selecciona una compañía válida.')
 
-                nuevo_username = None
                 if email and u.user and email != (u.user.email or '').lower():
                     try:
                         validate_email(email)
                     except ValidationError:
                         errores.append('Ingresa un correo válido.')
                     else:
-                        nuevo_username = email.split('@')[0]
                         if User.objects.filter(email__iexact=email).exclude(pk=u.user.pk).exists():
                             errores.append('Ya existe otro usuario con ese correo.')
-                        elif User.objects.filter(username__iexact=nuevo_username).exclude(pk=u.user.pk).exists():
-                            errores.append('Ya existe otro usuario con un correo que empieza igual; usa otro correo.')
 
                 if u.user and nueva_password:
                     try:
@@ -735,9 +734,9 @@ def usuarios(request):
                         u.id_compania = compania_obj
                         u.save()
                         if u.user:
-                            if nuevo_username:
+                            u.user.username = username
+                            if email:
                                 u.user.email = email
-                                u.user.username = nuevo_username
                             if nueva_password:
                                 u.user.set_password(nueva_password)
                             u.user.save()
@@ -747,29 +746,37 @@ def usuarios(request):
             else:
                 nombre = (nombre or '').strip()
                 password = request.POST.get('password', '')
-                username = email.split('@')[0] if email else ''
                 compania_obj = Compania.objects.filter(pk=compania_id).first() if compania_id else None
+
+                if not username:
+                    errores.append('Ingresa el nombre de usuario.')
+                elif User.objects.filter(username__iexact=username).exists():
+                    errores.append('Ya existe un usuario con ese nombre de usuario.')
 
                 if not nombre:
                     errores.append('Ingresa el nombre completo.')
                 elif nombre.isdigit():
                     errores.append('El nombre no puede contener solo números.')
-                try:
-                    validate_email(email)
-                except ValidationError:
-                    errores.append('Ingresa un correo válido.')
-                else:
-                    if User.objects.filter(email__iexact=email).exists() or User.objects.filter(username__iexact=username).exists():
-                        errores.append('Ya existe un usuario con ese correo.')
+
+                if email:
+                    try:
+                        validate_email(email)
+                    except ValidationError:
+                        errores.append('Ingresa un correo válido.')
+                    else:
+                        if User.objects.filter(email__iexact=email).exists():
+                            errores.append('Ya existe un usuario con ese correo.')
+
                 if rol not in ROLES_USUARIO:
                     errores.append('Selecciona un rol válido.')
                 if compania_id and not compania_obj:
                     errores.append('Selecciona una compañía válida.')
+                
                 try:
                     validate_password(password, user=User(username=username, email=email))
                 except ValidationError:
                     errores.append('La contraseña debe tener al menos 8 caracteres, no ser solo números, '
-                                   'no ser una clave común ni parecerse al correo.')
+                                   'no ser una clave común ni parecerse al usuario.')
 
                 if not errores:
                     with transaction.atomic():
@@ -778,13 +785,14 @@ def usuarios(request):
                     return redirect('usuarios')
 
             # Si hay errores, guardamos los datos para no perderlos en el formulario
-            form_data = {'name': nombre, 'email': email, 'role': rol, 'comp_id': compania_id or '',
+            form_data = {'username': username, 'name': nombre, 'email': email, 'role': rol, 'comp_id': compania_id or '',
                          'edit_id': user_id or ''}
 
     users_data = []
     for u in Usuario.objects.select_related('id_compania', 'user').all():
         users_data.append({
             'id': u.id_user,
+            'username': u.user.username if u.user else '',
             'name': u.nombre,
             'email': (u.user.email if u.user else '') or 'Sin correo',
             'comp': u.id_compania.nombre if u.id_compania else 'Sin compañía',
@@ -822,7 +830,6 @@ def usuarios(request):
     }
 
     return render(request, 'core/usuarios.html', context)
-
 
 @login_required(login_url='index')
 def descargar_pdf_vehiculo(request, id_vehi):

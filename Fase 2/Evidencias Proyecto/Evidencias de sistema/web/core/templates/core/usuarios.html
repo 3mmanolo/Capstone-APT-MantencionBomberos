@@ -31,6 +31,32 @@
   body.dark-mode label {
       color: #e0e0e0 !important;
   }
+  /* Corrección de colores para las insignias de roles en la tabla de usuarios */
+  body.dark-mode .pill,
+  body.dark-mode span[class*="pill-"],
+  body.dark-mode td span[style*="background"] {
+      border: 1px solid #444 !important;
+  }
+
+  /* Estilos específicos para los roles (Voluntario, Administrador u otros) */
+  body.dark-mode .pill-voluntario,
+  body.dark-mode td span:contains("Voluntario") {
+      background-color: #1b382b !important;
+      color: #6ee7b7 !important;
+  }
+
+  body.dark-mode .pill-admin,
+  body.dark-mode .pill-administrador {
+      background-color: #3b2d15 !important;
+      color: #fbd38d !important;
+  }
+
+  body.dark-mode td span[style*="border-radius"],
+  body.dark-mode .badge {
+      background-color: #2a2a2a !important;
+      color: #e0e0e0 !important;
+      border-color: #444 !important;
+  }
 </style>
 </head>
 <body>
@@ -83,6 +109,12 @@
         
         <p style="font-size:13px; font-weight:700; margin:0 0 14px;" id="form-title">Agregar usuario</p>
         
+        <!-- Campo Username como primer elemento -->
+        <div style="margin-bottom:16px;">
+          <label>Nombre de usuario (Username)</label>
+          <input type="text" id="f-username" name="username" placeholder="Ej: mgonzalez" required>
+        </div>
+
         <div style="display:grid; grid-template-columns:1fr 1fr; gap:16px; margin-bottom:16px;">
           <div>
             <label>Nombre completo</label>
@@ -90,7 +122,7 @@
           </div>
           <div>
             <label>Correo institucional</label>
-            <input type="email" id="f-email" name="email" placeholder="nombre.apellido@bomberostalcahuano.cl" required>
+            <input type="email" id="f-email" name="email" placeholder="nombre.apellido@bomberostalcahuano.cl">
           </div>
         </div>
 
@@ -145,6 +177,7 @@
         <table>
           <thead>
             <tr>
+              <th>USUARIO</th>
               <th>NOMBRE</th>
               <th>CORREO</th>
               <th>COMPAÑÍA</th>
@@ -207,7 +240,8 @@
 
       return `
         <tr>
-          <td style="font-weight:600;">
+          <td style="font-weight:600; color:var(--text2);">${esc(u.username)}</td>
+          <td>
             <span style="display:inline-flex; align-items:center; gap:10px;">
               <div style="width:28px; height:28px; border-radius:50%; background:var(--red); display:flex; align-items:center; justify-content:center; color:#fff; font-size:11px; font-weight:700; flex-shrink:0;">${esc(u.initials)}</div>
               ${esc(u.name)}
@@ -231,13 +265,13 @@
 
   function openForm(user) {
     formCard.style.display = 'block';
+    const usernameInput = document.getElementById('f-username');
     const emailInput = document.getElementById('f-email');
     const passInput = document.getElementById('f-pass');
     const passHelp = document.getElementById('f-pass-help');
     
-    // El correo siempre está habilitado para permitir cambios
+    usernameInput.disabled = false;
     emailInput.disabled = false;
-    emailInput.required = true;
     passInput.disabled = false;
     passInput.value = '';
 
@@ -247,8 +281,9 @@
       passInput.placeholder = '••••••••';
       passHelp.style.display = 'block'; // Mostrar ayuda de contraseña opcional
       document.getElementById('edit-id').value = user.id;
+      usernameInput.value = user.username;
       document.getElementById('f-name').value = user.name;
-      emailInput.value = user.email;
+      emailInput.value = user.email !== 'Sin correo' ? user.email : '';
       document.getElementById('f-comp').value = user.comp_id;
       document.getElementById('f-role').value = user.role;
     } else {
@@ -257,6 +292,7 @@
       passInput.placeholder = 'Mínimo 8 caracteres';
       passHelp.style.display = 'none'; // Ocultar ayuda
       document.getElementById('edit-id').value = '';
+      usernameInput.value = '';
       document.getElementById('f-name').value = '';
       emailInput.value = '';
       document.getElementById('f-comp').selectedIndex = 0;
@@ -301,9 +337,9 @@
 
   const FORM_DATA = JSON.parse(document.getElementById('form-data').textContent);
   if (FORM_DATA) {
-    // Si el error fue al EDITAR, se reabre en modo edición (antes volvía como "Agregar" y creaba un usuario nuevo)
     const editado = FORM_DATA.edit_id ? USERS.find(u => String(u.id) === String(FORM_DATA.edit_id)) : null;
     openForm(editado || null);
+    document.getElementById('f-username').value = FORM_DATA.username || '';
     document.getElementById('f-name').value = FORM_DATA.name;
     document.getElementById('f-email').value = FORM_DATA.email;
     document.getElementById('f-comp').value = FORM_DATA.comp_id;
@@ -329,7 +365,6 @@
   if (localStorage.getItem('darkMode') === 'enabled') {
       document.body.classList.add('dark-mode');
   }
-
 
   // Función para alternar la visibilidad de la contraseña en la gestión de usuarios
   function toggleUserPasswordVisibility() {
