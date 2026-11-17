@@ -56,7 +56,7 @@ def api_login(request):
     if not username_input or not password_input:
         return JsonResponse({'success': False, 'message': 'Proporcione usuario/correo y contraseña.'}, status=400)
 
-    # Intentar autenticar por username o por email
+    #autenticar por username o por email
     user = authenticate(request, username=username_input, password=password_input)
     if user is None and '@' in username_input:
         user_obj = User.objects.filter(email__iexact=username_input).first()
@@ -74,7 +74,7 @@ def api_login(request):
     if not correo_destino:
         return JsonResponse({'success': False, 'message': MSG_SIN_CORREO}, status=400)
 
-    # --- NUEVO: Generar y enviar código 2FA por correo ---
+    
     codigo_aleatorio = f"{secrets.randbelow(900000) + 100000}"
     
     # Guardar el código y su expiración (5 minutos) en el perfil del usuario
@@ -553,7 +553,7 @@ def api_usuarios(request):
         if not nombre or not email:
             return JsonResponse({'success': False, 'message': 'Nombre y correo son requeridos.'}, status=400)
 
-        # El rol debe ser uno de los definidos en el sistema
+        
         if rol and rol not in ROLES_USUARIO:
             return JsonResponse({'success': False, 'message': 'Rol no válido.'}, status=400)
 
@@ -575,7 +575,7 @@ def api_usuarios(request):
                 u_obj.user.set_password(password)
                 u_obj.user.save()
         else:
-            # --- ALTA de un usuario nuevo: nunca reutilizar una cuenta existente ---
+            
             if not password:
                 return JsonResponse({'success': False, 'message': 'La contraseña es obligatoria.'}, status=400)
             username_clean = email.split('@')[0]
@@ -645,7 +645,7 @@ def api_vehiculo_operativo(request, vehiculo_id):
     v_obj.estado = 'operativo'
     v_obj.save()
 
-    # 🔄 Actualizar el estado de todas las mantenciones ligadas a este vehículo a "completada"
+    
     Mantencion.objects.filter(id_vehi=v_obj).update(estado='completada')
 
     return JsonResponse({'success': True, 'message': 'Marcado como operativo exitosamente.'})

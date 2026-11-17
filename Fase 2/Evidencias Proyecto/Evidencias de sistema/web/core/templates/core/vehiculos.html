@@ -138,7 +138,7 @@
         </div>
       </form>
 
-      <!-- Formulario oculto para eliminar -->
+      <!-- Formulariopara eliminar -->
       <form id="delete-form" method="POST" action="{% url 'vehiculos' %}" style="display:none;">
         {% csrf_token %}
         <input type="hidden" name="action" value="delete">

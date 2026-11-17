@@ -8,7 +8,7 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css">
 <link rel="icon" type="image/png" href="{% static 'imagenes/logo.png' %}">
 <link rel="stylesheet" href="{% static 'styles.css' %}">
-<style>/* Estilos globales para el modo oscuro */
+<style>
 body.dark-mode {
     background-color: #121212 !important;
     color: #e0e0e0 !important;
@@ -25,7 +25,6 @@ body.dark-mode .table {
     border-color: #333 !important;
 }
 
-/* Bloque del switch y filas internas */
 body.dark-mode .dark-mode-setting {
     background-color: #252525 !important;
     border: 1px solid #333 !important;
@@ -147,7 +146,6 @@ body.dark-mode .btn-secondary {
 </div>
 
 <style>
-  /* Estilos visuales del switch */
   .slider:before {
     position: absolute; content: ""; height: 18px; width: 18px; left: 4px; bottom: 4px; background-color: white; transition: .4s; border-radius: 50%;
   }
@@ -193,13 +191,13 @@ body.dark-mode .btn-secondary {
   document.addEventListener("DOMContentLoaded", function() {
     const toggleSwitch = document.querySelector('#darkModeToggle');
     
-    // 1. Al cargar la página, verificamos si el modo oscuro estaba activo en localStorage
+    // verificar modo oscuro  en localstorage
     if (localStorage.getItem('darkMode') === 'enabled') {
         document.body.classList.add('dark-mode');
         if (toggleSwitch) toggleSwitch.checked = true;
     }
 
-    // 2. Si estamos en la página de perfil, escuchamos cuando el usuario mueva el switch
+  
     if (toggleSwitch) {
         toggleSwitch.addEventListener('change', function(e) {
             if (e.target.checked) {

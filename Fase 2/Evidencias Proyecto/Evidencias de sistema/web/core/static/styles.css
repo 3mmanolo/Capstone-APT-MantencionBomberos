@@ -234,7 +234,6 @@
 
 /* ajustes de modo oscuro */
 
-/* Estilos globales para cuando el body tenga la clase dark-mode */
 body.dark-mode {
     background-color: #121212 !important;
     color: #e0e0e0 !important;

@@ -31,14 +31,12 @@
   body.dark-mode label {
       color: #e0e0e0 !important;
   }
-  /* Corrección de colores para las insignias de roles en la tabla de usuarios */
   body.dark-mode .pill,
   body.dark-mode span[class*="pill-"],
   body.dark-mode td span[style*="background"] {
       border: 1px solid #444 !important;
   }
 
-  /* Estilos específicos para los roles (Voluntario, Administrador u otros) */
   body.dark-mode .pill-voluntario,
   body.dark-mode td span:contains("Voluntario") {
       background-color: #1b382b !important;
@@ -63,7 +61,6 @@
 
 <div class="layout">
   
-  <!-- SIDEBAR -->
   <div class="sidebar">
     <div class="sidebar-brand">
       <div class="logo"><img src="{% static 'imagenes/logo2.png' %}" alt="Logo Control de mantención"></div>
@@ -85,7 +82,6 @@
 
   <div class="sidebar-backdrop" id="sidebar-backdrop"></div>
 
-  <!-- ÁREA PRINCIPAL DE CONTENIDO -->
   <div class="main">
     <div class="topbar">
       <div style="display:flex; align-items:center; gap:12px;">
@@ -101,7 +97,7 @@
     <div class="content">
       {% include "core/_mensajes.html" %}
 
-      <!-- Formulario para Agregar / Editar -->
+      <!-- Formulario para agregar yeditar -->
       <form method="POST" action="{% url 'usuarios' %}" class="card" id="form-card" style="display:none; margin-bottom:20px; max-width:640px;">
         {% csrf_token %}
         <input type="hidden" name="action" value="save">
@@ -109,7 +105,6 @@
         
         <p style="font-size:13px; font-weight:700; margin:0 0 14px;" id="form-title">Agregar usuario</p>
         
-        <!-- Campo Username como primer elemento -->
         <div style="margin-bottom:16px;">
           <label>Nombre de usuario (Username)</label>
           <input type="text" id="f-username" name="username" placeholder="Ej: mgonzalez" required>
@@ -165,7 +160,7 @@
         </div>
       </form>
 
-      <!-- Formulario oculto para eliminar -->
+      <!-- Formulariopara eliminar -->
       <form id="delete-form" method="POST" action="{% url 'usuarios' %}" style="display:none;">
         {% csrf_token %}
         <input type="hidden" name="action" value="delete">

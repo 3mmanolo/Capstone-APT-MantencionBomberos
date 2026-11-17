@@ -1,4 +1,4 @@
-# core/views.py
+
 import re
 import logging
 logger = logging.getLogger(__name__)
@@ -33,17 +33,14 @@ import secrets
 from django.core.mail import send_mail
 from django.conf import settings
 
+from datetime import datetime  
 
 
 urlpatterns = [
-    #path('api/elementos/', api_views.lista_elementos, name='api_lista'),
     path('api/login/', obtain_auth_token, name='api_token_auth'), # Devuelve el token al usuario móvil
 ]
 
-import secrets
-from django.core.mail import send_mail
-from django.conf import settings
-from django.utils import timezone
+
 
 
 User = get_user_model()
@@ -52,8 +49,6 @@ MSG_SIN_CORREO = "Tu cuenta no tiene un correo registrado. Contacta al administr
 
 
 def correo_de_usuario(user):
-    """Correo válido al que enviar el código 2FA, o '' si la cuenta no tiene uno.
-    Nunca usa el nombre de usuario como dirección."""
     perfil = getattr(user, 'perfil', None)
     for correo in (getattr(perfil, 'email', None), user.email):
         correo = (correo or '').strip()
@@ -64,17 +59,11 @@ def correo_de_usuario(user):
 
 @ratelimit(key='ip', rate='5/m', method='POST', block=False)
 def index(request):
-    # Si el usuario hace clic en "Volver al login", limpiamos el estado 2FA en sesión
+    
     if request.GET.get('reset') == '1':
         if 'pre_auth_user_id' in request.session:
             del request.session['pre_auth_user_id']
         return redirect('index')
-
-    if request.user.is_authenticated:
-        return redirect('dashboard')
-
-
-
 
     if request.user.is_authenticated:
         return redirect('dashboard')
@@ -85,7 +74,7 @@ def index(request):
     user_id = request.session.get('pre_auth_user_id')
     esperando_2fa = bool(user_id)
 
-    # Validar vigencia del código en sesión usando el perfil
+    
     if user_id:
         try:
             user = User.objects.get(pk=user_id)
@@ -133,7 +122,7 @@ def index(request):
                     perfil.expiracion_2fa = timezone.now() + timezone.timedelta(minutes=5)
                     perfil.save()
                     
-                    # Usar el campo mail del perfil (o email si aplica como respaldo)
+                   
                     send_mail(
                         subject='Nuevo Código de Verificación - Sistema Bomberos',
                         message=f'Tu nuevo código de verificación es: {codigo_aleatorio}. Expira en 5 minutos.',
@@ -239,9 +228,7 @@ def cerrar_sesion(request):
     return redirect('index')  # Redirige a la página de login
 
 def _datos_usuario_actual(request):
-    """Devuelve (perfil, datos para la plantilla) del usuario en sesion.
-    Tolera cuentas de acceso sin perfil (Usuario) asociado, que de otro modo
-    provocan un error 500 al leer request.user.perfil."""
+    
     perfil_usuario = getattr(request.user, 'perfil', None)
     is_admin = request.user.is_superuser or bool(
         perfil_usuario and (perfil_usuario.rol or '').lower() == 'administrador'
@@ -299,25 +286,21 @@ def vehidetalle(request, vehiculo_id):
 def cambiar_estado(request, id_vehi):
     perfil_usuario, current_user_data = _datos_usuario_actual(request)
     
-    # 🔒 Bloquear si es chofer
     if not gestiona_flota(request.user):
         messages.error(request, "No tienes permisos para realizar esta acción.")
         return redirect('dashboard')
 
     vehiculo = get_object_or_404(Vehiculo, pk=id_vehi)
 
-    # Actualizar estado del vehículo a operativo sin modificar arbitrariamente la fecha
     vehiculo.estado = 'operativo'
     vehiculo.save()
     
-    # 🔄 NUEVO: Actualizar el estado de todas las mantenciones ligadas a este vehículo a "completada"
+    #cambiar estado mantenciones al cambiar estado vehiculo
     Mantencion.objects.filter(id_vehi=vehiculo).update(estado='completada')
-    
-    # Redirige usando el argumento posicional o vehiculo_id=id_vehi
+
     return redirect('vehidetalle', vehiculo_id=id_vehi)
 
 
-from datetime import datetime  # Asegúrate de importar datetime si no lo tienes
 
 @login_required(login_url='index')
 def registrar(request):
@@ -329,7 +312,7 @@ def registrar(request):
     perfil_usuario, current_user_data = _datos_usuario_actual(request)
     current_user_data['email'] = request.user.email
 
-    # 🔒 Bloquear si el rol es chofer e intenta enviar datos (POST)
+    
     if not gestiona_flota(request.user):
         messages.error(request, "No tienes permisos para realizar esta acción.")
         return redirect('dashboard')
@@ -337,7 +320,7 @@ def registrar(request):
     if request.method == 'POST':
         vehiculo_id = request.POST.get('vehiculo')
         tipo_id = request.POST.get('tipo')
-        fecha_ter_raw = request.POST.get('fecha_ter', '').strip()  # NUEVO: Capturar fecha de término
+        fecha_ter_raw = request.POST.get('fecha_ter', '').strip() 
         descripcion = request.POST.get('descripcion', '').strip()
         costo_raw = request.POST.get('costo', '')
         respon = request.POST.get('respon', '').strip()
@@ -353,7 +336,7 @@ def registrar(request):
         if not tipo_obj:
             errores.append('Selecciona un tipo de mantención válido.')
 
-        # Validar y convertir la fecha de término (opcional)
+        
         fecha_ter = None
         if fecha_ter_raw:
             try:
@@ -392,7 +375,7 @@ def registrar(request):
                 mantencion_obj = Mantencion.objects.create(
                     id_vehi=vehiculo_obj,
                     id_tipo=tipo_obj,
-                    fecha_ter=fecha_ter,  # NUEVO: Guardar la fecha de término
+                    fecha_ter=fecha_ter,  
                     descripcion=descripcion,
                     estado='pendiente',
                     costo_t=costo_total,
@@ -421,7 +404,7 @@ def registrar(request):
             'tipo_id_seleccionado': tipo_id,
             'costo_valor': costo_raw,
             'respon_valor': respon,
-            'fecha_ter_valor': fecha_ter_raw,  # NUEVO: Mantener valor en caso de error
+            'fecha_ter_valor': fecha_ter_raw,  
         }
         return render(request, 'core/registrar.html', context)
 
@@ -443,8 +426,8 @@ _TELEFONO_RE = re.compile(r'^\+?[\d\s()-]{7,20}$')
 
 @login_required(login_url='index')
 def perfil(request):
-    """Mi perfil: consulta y edición de nombre y teléfono (defecto 25).
-    El correo, el rol y la compañía los cambia un administrador en Usuarios."""
+    
+    #El correo , rol y la compañía los cambia un admin en Usarios.
     perfil_usuario, current_user_data = _datos_usuario_actual(request)
     errores = []
 
@@ -534,7 +517,7 @@ def vehiculos(request):
             if not tipo_v:
                 errores.append('Selecciona un tipo de vehículo.')
 
-            # Patente con formato chileno (defecto 19) y año en un rango posible (defecto 26)
+            
             patente, error = normalizar_patente(patente)
             if error:
                 errores.append(error)
@@ -550,11 +533,11 @@ def vehiculos(request):
                 kilometraje = 0
                 errores.append('El kilometraje debe ser un número.')
 
-            # 🔒 Validación: El kilometraje no puede ser negativo
+            
             if kilometraje < 0:
                 errores.append('El kilometraje no puede ser menor a 0.')
 
-            # Patente duplicada: se revisa antes de guardar para dar el mensaje correcto (defecto 21)
+            # Patente duplicada
             if patente:
                 duplicada = Vehiculo.objects.filter(patente__iexact=patente)
                 if edit_id:
@@ -609,43 +592,23 @@ def vehiculos(request):
 
 @login_required(login_url='index')
 def historial(request):
-    # Cambiamos 'mantencion' por 'mantenciones'
     vehiculos = Vehiculo.objects.select_related('id_compania').annotate(
         num_registros=Count('mantenciones')
     ).all()
 
-    perfil_usuario = getattr(request.user, 'perfil', None)
-    is_admin = request.user.is_superuser or bool(
-        perfil_usuario and (perfil_usuario.rol or '').lower() == 'administrador'
-    )
-
-    if perfil_usuario:
-        nombre = perfil_usuario.nombre
-        rol = perfil_usuario.rol
-        comp = str(perfil_usuario.id_compania) if perfil_usuario.id_compania else 'Sin Compañía'
-    else:
-        nombre = request.user.get_full_name() or request.user.username
-        rol = ''
-        comp = 'Sin Compañía'
-
-    current_user_data = {
-        'name': nombre,
-        'rol': rol,
-        'comp': comp,
-        'initials': ''.join([palabra[0].upper() for palabra in nombre.split()[:2]]) or '??',
-        'isAdmin': is_admin,
-    }
+    # ✨ Reemplazamos todo el bloque manual con una sola línea
+    perfil_usuario, current_user_data = _datos_usuario_actual(request)
 
     context = {
         'vehiculos': vehiculos,
         'current_user': current_user_data,
-        'current_user_json': {'isAdmin': is_admin},
+        'current_user_json': {'isAdmin': current_user_data['isAdmin']},
     }
     return render(request, 'core/historial.html', context)
 
 @login_required(login_url='index')
 def detalle(request, vehiculo_id):
-    # 1. Obtener datos del usuario actual igual que en el dashboard
+    # 1. Obtener datos del usuario actual 
     perfil, current_user_data = _datos_usuario_actual(request)
     current_user_data['role'] = current_user_data['rol']
 
@@ -664,9 +627,7 @@ from django.shortcuts import render, redirect
 from django.contrib.auth.decorators import login_required
 from .models import Usuario
 
-# core/views.py
 
-# core/views.py
 
 ROLES_USUARIO = ['Administrador', 'Encargado de flota', 'Chofer']
 
@@ -802,7 +763,7 @@ def usuarios(request):
                         Usuario.objects.create(user=nuevo, nombre=nombre, rol=rol, id_compania=compania_obj)
                     return redirect('usuarios')
 
-            # Si hay errores, guardamos los datos para no perderlos en el formulario
+           
             form_data = {'username': username, 'name': nombre, 'email': email, 'role': rol, 'comp_id': compania_id or '',
                          'edit_id': user_id or ''}
 

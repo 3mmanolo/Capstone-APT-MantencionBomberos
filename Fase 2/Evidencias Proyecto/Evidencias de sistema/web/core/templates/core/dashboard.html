@@ -9,7 +9,7 @@
 <link rel="icon" type="image/png" href="{% static 'imagenes/logo.png' %}">
 <link rel="stylesheet" href="{% static 'styles.css' %}">
 <style>
-  /* Estilos forzados para el modo oscuro */
+  #estilo modo oscuro
   body.dark-mode {
       background-color: #121212 !important;
       color: #e0e0e0 !important;
@@ -33,7 +33,6 @@
       color: #e0e0e0 !important;
   }
 
-  /* NUEVO: Estilo para los cuadros de estadísticas (stat) en modo oscuro */
   body.dark-mode .stat {
       background-color: #000000 !important;
       border: 1px solid #ffffff !important;
@@ -117,7 +116,6 @@
           <thead><tr><th>Vehículo</th><th>Patente</th><th>Compañía</th><th>Estado</th><th></th></tr></thead>
           <tbody>
             {% for v in flota %}
-            <!-- USA v.pk SI id_vehi NO ES LA CLAVE PRIMARIA DEFINIDA EN MODELS.PY -->
              <tr class="clickable" data-href="{% url 'vehidetalle' v.id_vehi %}" onclick="window.location.href=this.dataset.href">
               <td style="font-weight:600;"><span style="display:inline-flex; align-items:center; gap:10px;"><i class="ti ti-truck" style="color:var(--text2); font-size:17px;"></i>{{ v.modelo }}  . {{v.tipo_v }}</span></td>
               <td style="color:var(--text2);">{{ v.patente }}</td>
