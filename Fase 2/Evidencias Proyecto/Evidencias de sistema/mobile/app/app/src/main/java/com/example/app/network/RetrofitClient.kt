@@ -45,7 +45,7 @@ object RetrofitClient {
         var trimmed = url.trim()
         if (trimmed.isEmpty()) return DEFAULT_EMULATOR_URL
         if (!trimmed.startsWith("http://") && !trimmed.startsWith("https://")) {
-            trimmed = "https://$trimmed"
+            trimmed = "http://$trimmed"
         }
         if (!trimmed.endsWith("/")) {
             trimmed = "$trimmed/"
