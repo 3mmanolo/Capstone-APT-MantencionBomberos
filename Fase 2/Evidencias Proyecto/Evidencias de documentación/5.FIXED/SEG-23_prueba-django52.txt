@@ -1,0 +1,59 @@
+Prueba aislada de actualización de dependencias - 12/11/2026
+Entorno temporal separado y COPIA del proyecto y de la base (no se tocó el .venv ni la BD reales).
+
+== Versiones probadas
+Django==5.2.17
+djangorestframework==3.18.2
+django-cors-headers==4.9.0
+django-ratelimit==4.1.0
+python-dotenv==1.2.4
+psycopg2-binary==2.9.13
+reportlab==4.1.0
+
+== pip-audit (versiones nuevas)
+No known vulnerabilities found
+
+== manage.py check / makemigrations --check / migrate
+System check identified no issues (0 silenced).
+No changes detected
+  No migrations to apply.
+
+== Prueba de humo (web + API)
+Django 5.2.17
+OK   GET / (login)  [200]
+OK   CSP en respuesta
+OK   dashboard sin sesión redirige  [302]
+OK   login web paso 1 (pide código)  [200]
+OK   login web paso 2 (código correcto)  [/dashboard/]
+OK   GET /dashboard/  [200]
+OK   GET /vehiculos/  [200]
+OK   GET /usuarios/  [200]
+OK   GET /registrar/  [200]
+OK   GET /historial/  [200]
+OK   GET /perfil/  [200]
+OK   GET /detalle/1/  [200]
+OK   GET /vehidetalle/1/  [200]
+OK   Cache-Control no-store con sesión
+OK   PDF web  [200]
+OK   operativo por GET -> 405  [405]
+OK   operativo por POST (admin)  [302]
+OK   logout  [302]
+OK   operativo voluntario bloqueado  [/dashboard/]
+OK   usuarios voluntario bloqueado  [302]
+OK   API login pide 2FA sin exponer código  [200]
+OK   API verify-2fa entrega token  [200]
+OK   API GET /api/dashboard/ (admin)  [200]
+OK   API GET /api/vehiculos/ (admin)  [200]
+OK   API GET /api/historial/ (admin)  [200]
+OK   API GET /api/historial/1/ (admin)  [200]
+OK   API GET /api/notificaciones/ (admin)  [200]
+OK   API GET /api/usuarios/ (admin)  [200]
+OK   API GET /api/perfil/ (admin)  [200]
+OK   API PDF  [200]
+OK   API operativo admin (id inexistente -> 404)  [404]
+OK   API sin token -> 401  [401]
+OK   API voluntario crear admin -> 403  [403]
+OK   API voluntario lectura -> 200  [200]
+OK   API toma de cuenta bloqueada -> 400  [400]
+
+RESULTADO: 35/35 OK

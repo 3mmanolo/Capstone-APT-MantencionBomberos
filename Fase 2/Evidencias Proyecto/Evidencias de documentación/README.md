@@ -20,7 +20,7 @@ Capstone, sección 002D. Duoc UC, 2026.
 ### 2. Arquitectura
 | Documento | Descripción |
 |---|---|
-| [Documento Arquitectura Sistema(DAS) v1.1.docx](2.Arquitectura/Documento%20Arquitectura%20Sistema(DAS)%20v1.1.docx) | Documento de Arquitectura del Sistema |
+| [Documento Arquitectura Sistema(DAS).docx](2.Arquitectura/Documento%20Arquitectura%20Sistema(DAS).docx) | Documento de Arquitectura del Sistema (versión 1.2, 16/11/2026) |
 | [Diagramas](2.Arquitectura/Diagramas) | Casos de uso, clases, componentes, paquetes, procesos, secuencia, despliegue y vistas 4+1 (.drawio y .jpg) |
 
 ### 3. Documentación Scrum
@@ -47,3 +47,12 @@ Cada carpeta de sprint contiene el Sprint Backlog, el documento de validación d
 | Sprint 3 | 20/10/2026 – 02/11/2026 | [3.Sprint 3](3.Doc.Scrum/Sprints/3.Sprint%203) |
 | Sprint 4 | 03/11/2026 – 16/11/2026 | [4.Sprint 4](3.Doc.Scrum/Sprints/4.Sprint%204) |
 | Sprint 5 | 17/11/2026 – 30/11/2026 | [5.Sprint 5](3.Doc.Scrum/Sprints/5.Sprint%205) |
+
+### 4. Pruebas
+| Documento | Descripción |
+|---|---|
+| [Plan_de_Pruebas_Template.docx](4.Pruebas/Plan_de_Pruebas_Template.docx) | Plan de pruebas: alcance, estrategia, entorno, calendario, riesgos y criterios de aceptación (versión 7.0, 16/11/2026) |
+| [Planilla_Casos_de_Prueba_Template.xlsx](4.Pruebas/Planilla_Casos_de_Prueba_Template.xlsx) | 81 casos de prueba funcionales y de seguridad, con resultado y observaciones del ciclo 2 |
+| [Registro_Defectos.xlsx](4.Pruebas/Registro_Defectos.xlsx) | 74 defectos registrados, con severidad, estado y corrección aplicada |
+
+Las evidencias de las pruebas (capturas de antes y después de cada corrección) están en [Fase 3/Evidencias Grupales](../../../Fase%203/Evidencias%20Grupales).
