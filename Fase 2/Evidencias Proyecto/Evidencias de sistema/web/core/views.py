@@ -606,7 +606,7 @@ def historial(request):
     }
     return render(request, 'core/historial.html', context)
 
-@login_required(login_url='index')
+@logn_required(login_url='index')
 def detalle(request, vehiculo_id):
     # 1. Obtener datos del usuario actual 
     perfil, current_user_data = _datos_usuario_actual(request)
