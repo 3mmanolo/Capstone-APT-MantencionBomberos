@@ -29,7 +29,6 @@ import kotlinx.coroutines.launch
 
 @Composable
 fun AddVehicleScreen(onBack: () -> Unit) {
-    var codigo by remember { mutableStateOf("") }
     var nombre by remember { mutableStateOf("") }
     var patente by remember { mutableStateOf("") }
 
@@ -194,9 +193,6 @@ fun AddVehicleScreen(onBack: () -> Unit) {
                     style = MaterialTheme.typography.bodySmall
                 )
             }
-
-            // Código interno
-            FormField(label = "Código interno", value = codigo, onValueChange = { codigo = it }, placeholder = "Ej: B-5")
 
             // Nombre del vehículo
             FormField(label = "Nombre del vehículo", value = nombre, onValueChange = { nombre = it }, placeholder = "Ej: Bomba Nueva Estación")

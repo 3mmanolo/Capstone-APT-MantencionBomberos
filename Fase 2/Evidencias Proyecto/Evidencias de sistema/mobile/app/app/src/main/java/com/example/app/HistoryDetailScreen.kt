@@ -117,13 +117,13 @@ fun HistoryDetailScreen(
                 )
                 Column {
                     Text(
-                        text = "Registros de $vehicleId",
+                        text = "Registros de $vehicleName",
                         color = Color.White,
                         fontSize = 18.sp,
                         fontWeight = FontWeight.Bold
                     )
                     Text(
-                        text = vehicleName,
+                        text = "Historial técnico de mantenimientos",
                         color = Color.White.copy(alpha = 0.7f),
                         fontSize = 13.sp
                     )
@@ -135,7 +135,7 @@ fun HistoryDetailScreen(
                 onClick = {
                     if (isDownloadingPdf) return@Button
                     isDownloadingPdf = true
-                    downloadPdfForHistory(realVehicleId, vehicleId, context) { msg ->
+                    downloadPdfForHistory(realVehicleId, vehicleName, context) { msg ->
                         pdfResultMessage = msg
                         showPdfResultDialog = true
                         isDownloadingPdf = false
@@ -212,14 +212,17 @@ fun MantencionItemCard(mantencion: LogMantencion) {
                 )
             }
             
-            Spacer(modifier = Modifier.height(8.dp))
+            Spacer(modifier = Modifier.height(10.dp))
             
-            Row(modifier = Modifier.fillMaxWidth()) {
-                Text(text = "Responsable: ", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                Text(text = mantencion.responsable, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
-                Spacer(modifier = Modifier.width(16.dp))
-                Text(text = "Kilometraje: ", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, fontWeight = FontWeight.Bold)
-                Text(text = mantencion.kilometraje, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
+            Column(verticalArrangement = Arrangement.spacedBy(4.dp)) {
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Text(text = "Responsable: ", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text(text = mantencion.responsable, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
+                }
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    Text(text = "Kilometraje: ", color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 13.sp, fontWeight = FontWeight.Bold)
+                    Text(text = mantencion.kilometraje, color = MaterialTheme.colorScheme.onSurface, fontSize = 13.sp)
+                }
             }
 
             Spacer(modifier = Modifier.height(12.dp))

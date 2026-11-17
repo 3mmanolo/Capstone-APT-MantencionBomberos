@@ -155,7 +155,7 @@ fun HistoryVehicleCard(item: HistoryItem, onClick: () -> Unit) {
             ) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "${item.id} • ${item.nombre}",
+                        text = item.nombre,
                         color = MaterialTheme.colorScheme.onSurface,
                         fontSize = 15.sp,
                         fontWeight = FontWeight.Bold

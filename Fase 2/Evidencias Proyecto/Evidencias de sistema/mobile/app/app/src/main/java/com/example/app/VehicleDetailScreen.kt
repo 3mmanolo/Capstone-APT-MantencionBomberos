@@ -101,7 +101,7 @@ fun VehicleDetailScreen(
         AlertDialog(
             onDismissRequest = { if (!isLoading) showConfirmDialog = false },
             title = { Text(text = "Confirmar Cambio de Estado", fontWeight = FontWeight.Bold) },
-            text = { Text(text = "¿Deseas cambiar el estado de este vehículo ($vehicleName - $patente) a OPERATIVO en la base de datos?") },
+            text = { Text(text = "¿Deseas cambiar el estado de este vehículo ($vehicleName - $patente) a OPERATIVO?") },
             confirmButton = {
                 Button(
                     onClick = {
@@ -213,7 +213,7 @@ fun VehicleDetailScreen(
             )
             Column {
                 Text(
-                    text = "$vehicleId • $vehicleName",
+                    text = vehicleName,
                     color = Color.White,
                     fontSize = 18.sp,
                     fontWeight = FontWeight.Bold

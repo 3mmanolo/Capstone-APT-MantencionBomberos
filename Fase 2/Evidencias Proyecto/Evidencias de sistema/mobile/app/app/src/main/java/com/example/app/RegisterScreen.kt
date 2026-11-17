@@ -49,6 +49,7 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.app.network.AdminVehiculoDto
+import com.example.app.network.NotificationHelper
 import com.example.app.network.RegistrarMantencionRequest
 import com.example.app.network.RetrofitClient
 import com.example.app.ui.theme.AppTheme
@@ -452,6 +453,21 @@ fun RegisterScreen(modifier: Modifier = Modifier) {
                                 isSaving = false
                                 if (resp.isSuccessful && resp.body()?.success == true) {
                                     Toast.makeText(context, "Mantención registrada con éxito", Toast.LENGTH_LONG).show()
+                                    
+                                    try {
+                                        val notifResp = RetrofitClient.apiService.getNotificaciones()
+                                        if (notifResp.isSuccessful && notifResp.body()?.success == true) {
+                                            notifResp.body()!!.notificaciones.forEachIndexed { index, notif ->
+                                                NotificationHelper.showNotification(
+                                                    context = context,
+                                                    id = 4000 + index,
+                                                    title = notif.titulo,
+                                                    message = notif.mensaje
+                                                )
+                                            }
+                                        }
+                                    } catch (e: Exception) {}
+
                                     descripcionText = ""
                                     costoText = ""
                                     responsableText = ""

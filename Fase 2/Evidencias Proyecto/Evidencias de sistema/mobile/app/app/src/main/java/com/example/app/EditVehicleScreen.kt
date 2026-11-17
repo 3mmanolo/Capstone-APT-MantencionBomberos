@@ -35,8 +35,7 @@ fun EditVehicleScreen(
     vehicle: AdminVehicle,
     onBack: () -> Unit
 ) {
-    var codigo by remember { mutableStateOf(vehicle.name.split(" • ").first()) }
-    var nombre by remember { mutableStateOf(vehicle.name.split(" • ").last()) }
+    var nombre by remember { mutableStateOf(vehicle.name) }
     var patente by remember { mutableStateOf(vehicle.patente) }
     var anio by remember { mutableStateOf(vehicle.anio) }
     var kilometraje by remember { mutableStateOf(if (vehicle.kilometraje % 1.0 == 0.0) vehicle.kilometraje.toLong().toString() else vehicle.kilometraje.toString()) }
@@ -99,7 +98,6 @@ fun EditVehicleScreen(
                 .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
-            FormField(label = "Código interno", value = codigo, onValueChange = { codigo = it }, placeholder = "Ej: B-5")
             FormField(label = "Nombre del vehículo", value = nombre, onValueChange = { nombre = it }, placeholder = "Ej: Bomba Nueva Estación")
             FormField(label = "Patente", value = patente, onValueChange = { patente = it }, placeholder = "Ej: ABCD-12")
 

@@ -13,8 +13,8 @@ android {
         applicationId = "com.example.app"
         minSdk = 24
         targetSdk = 37
-        versionCode = 4
-        versionName = "1.3"
+        versionCode = 19
+        versionName = "2.8"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -60,18 +60,19 @@ dependencies {
     debugImplementation(libs.androidx.compose.ui.tooling)
 }
 
-// Copiar automáticamente la APK generada al Escritorio tras cada compilación
+// Copiar automáticamente la APK generada al Escritorio con nombre único basado en la versión
 val copyApkTask = tasks.register("copyApkToDesktop") {
-    doNotTrackState("Copia la APK al Escritorio")
+    doNotTrackState("Copia la APK al Escritorio con nombre único")
     val buildDir = layout.buildDirectory
     doLast {
         val apkFile = File(buildDir.get().asFile, "outputs/apk/debug/app-debug.apk")
         val desktopFolder = File(System.getProperty("user.home"), "OneDrive/Desktop").takeIf { it.exists() }
             ?: File(System.getProperty("user.home"), "Desktop")
         if (apkFile.exists() && desktopFolder.exists()) {
-            val targetFile = File(desktopFolder, "bombero-v47-debug.apk")
+            val uniqueName = "bombero-v2.8-code19-debug.apk"
+            val targetFile = File(desktopFolder, uniqueName)
             apkFile.copyTo(targetFile, overwrite = true)
-            println("APK copiada automáticamente al Escritorio con nuevo nombre v47: ${targetFile.absolutePath}")
+            println("APK copiada automáticamente al Escritorio con nombre único: ${targetFile.absolutePath}")
         }
     }
 }

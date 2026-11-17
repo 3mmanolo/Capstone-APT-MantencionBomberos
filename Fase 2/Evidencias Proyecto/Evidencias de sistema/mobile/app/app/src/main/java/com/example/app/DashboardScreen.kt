@@ -523,7 +523,7 @@ fun MainDashboardContent(onVehicleClick: (Vehiculo) -> Unit) {
                             ) {
                                 Column(modifier = Modifier.weight(1.2f)) {
                                     Text(
-                                        text = "${vehiculo.id} • ${vehiculo.nombre}",
+                                        text = vehiculo.nombre,
                                         color = MaterialTheme.colorScheme.onSurface,
                                         fontSize = 15.sp,
                                         fontWeight = FontWeight.Bold
